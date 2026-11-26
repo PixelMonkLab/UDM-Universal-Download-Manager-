@@ -12,3 +12,6 @@ VDM-Windows.zip
 # OS clutter
 .DS_Store
 Thumbs.db
+
+# Add-on packages made by tools/package_addons.py (published on the Release page)
+dist-addons/

@@ -170,13 +170,13 @@ function classify(url, headers) {
 }
 
 api.webRequest && api.webRequest.onHeadersReceived.addListener(async (d) => {
-  if (d.tabId < 0 || d.url.startsWith(VG.BASE) || SKIP_HOSTS.test(d.url) || d.statusCode >= 400) return;
+  if (d.tabId < 0 || d.url.startsWith(VG.BASE) || SKIP_HOSTS.test(d.url) || d.statusCode >= 400 || VG.isBlocked(d.url)) return;
   if (!/^https?:/.test(d.url)) return;
   const c = classify(d.url, d.responseHeaders);
   if (!c) return;
   let tab = null;
   try { tab = await api.tabs.get(d.tabId); } catch (e) { return; }
-  if (VG.siteOf(tab.url || "")) return;          // YouTube/Instagram/Pinterest: the page link works better
+  if (VG.siteOf(tab.url || "") || VG.isBlocked(tab.url || "")) return;   // YouTube/Instagram/Pinterest: the page link works better
   const list = await loadMedia(d.tabId);
   const key = d.url.split("?")[0];
   const i = list.findIndex(x => x.url.split("?")[0] === key);
@@ -242,7 +242,7 @@ api.downloads && api.downloads.onCreated.addListener(async (item) => {
   try {
     const s = await VG.getSettings();
     const url = item.finalUrl || item.url || "";
-    if (!s.catch_downloads || !/^https?:/i.test(url) || handedOver.has(url)) return;
+    if (!s.catch_downloads || !/^https?:/i.test(url) || handedOver.has(url) || VG.isBlocked(url) || VG.isBlocked(item.referrer || "")) return;
     if (item.byExtensionId && item.byExtensionId === api.runtime.id) return;
     const name = (item.filename || "").split(/[\\/]/).pop() || decodeURIComponent(url.split("?")[0].split("/").pop() || "");
     const ext = (name.match(/\.([a-z0-9]{1,6})$/i) || [])[1];

@@ -200,7 +200,7 @@ Only download content you own or have permission to save.</p>
   <p class="small" id="extFor"></p>
   <div id="extSteps"></div>
   <div class="status" id="extStatus">Waiting for the add-on… (this updates by itself)</div>
-  <p class="small" style="margin-top:12px">Why not fully automatic? Browsers only allow one-click installs from their own stores, and those don't accept YouTube downloaders. This takes about 30 seconds, and you only do it once.</p>
+  <p class="small" id="extWhy" style="margin-top:12px">Why not fully automatic? Browsers only allow one-click installs from their own stores, and those don't accept YouTube downloaders. This takes about 30 seconds, and you only do it once.</p>
 </div></div>
 
 <!-- PHONE -->
@@ -428,13 +428,28 @@ async function openExtModal(){
   const ff=BR.id==="firefox", path=ff?extPaths.firefox+(IS_MAC?"/":"\\")+"manifest.json":extPaths.chrome;
   const pasteTip=IS_MAC?"In the window that opens, press <code class='k'>⌘ Cmd</code>+<code class='k'>⇧ Shift</code>+<code class='k'>G</code>, paste with <code class='k'>⌘ Cmd</code>+<code class='k'>V</code>, press <b>Enter</b>, then click <b>"+(ff?"Open":"Select")+"</b>."
     :"In the window that opens, click the address bar at the top, paste with <code class='k'>Ctrl</code>+<code class='k'>V</code>, press <b>Enter</b>, then click <b>"+(ff?"Open":"Select Folder")+"</b>.";
-  st.innerHTML=
+  const manual=
     stepHTML(1,`Open ${BR.name}'s add-ons page`,`<p>Click Copy, open a <b>new tab</b>, paste into the address bar and press Enter.</p><button class="ghost sm" id="cpPage">📋 Copy “${BR.page}”</button>`)+
     (ff?stepHTML(2,"Click “Load Temporary Add-on…”","<p>It's on the page you just opened.</p>")
        :stepHTML(2,"Turn on “Developer mode”",`<p>${BR.id==="edge"?"Bottom-left of the page.":"Top-right corner of the page."}</p>`))+
     stepHTML(3,ff?"Choose the VDM file":"Click “Load unpacked” and choose the VDM folder",
       `<p>${pasteTip}</p><button class="sm" id="cpPath">📋 Copy ${ff?"file":"folder"} location</button> <button class="ghost sm" id="showExt">📂 Show it in ${IS_MAC?"Finder":"Explorer"}</button>`)+
     stepHTML(4,"Done!","<p>VDM opens by itself and this window turns green. "+(ff?"Note: Firefox removes test add-ons when it closes, so repeat this after restarting Firefox.":"Keep the VDM folder where it is.")+"</p>");
+  const store=(extPaths&&extPaths.store)||{};
+  const link=ff?store.firefox:(BR.id==="edge"?(store.edge||store.chrome):store.chrome);
+  $("extWhy").classList.toggle("hidden",!!link);
+  if(link){
+    const storeName=ff?"Firefox":BR.id==="edge"&&store.edge?"Edge Add-ons":"Chrome Web Store";
+    st.innerHTML=`<div class="step" style="border:none"><div style="flex:1;text-align:center">
+        <a class="btn1" id="oneClick" href="${link}" target="_blank" rel="noopener"
+           style="display:inline-block;background:var(--acc);color:#fff;text-decoration:none;font-weight:800;font-size:18px;padding:16px 28px;border-radius:12px">
+           ⬇ Add to ${BR.name} – one click</a>
+        <p class="small" style="margin-top:10px">${ff?"Firefox asks once: click <b>Add</b>.":"Opens the "+storeName+": click <b>"+(BR.id==="edge"&&store.edge?"Get":"Add to "+BR.name)+"</b>."}
+        ${!ff&&!(BR.id==="edge"&&store.edge)?"<br>The store version has everything except YouTube (store rules). For YouTube too, install manually below.":""}</p></div></div>
+      <details style="margin-top:6px"><summary class="small" style="cursor:pointer">Install manually instead (full version)</summary>${manual}</details>`;
+  }else{
+    st.innerHTML=manual+'<p class="small" style="margin-top:6px">⏳ One-click install from the add-on stores is coming soon. Until then, it takes about 30 seconds.</p>';
+  }
   $("cpPage").onclick=()=>copy(BR.page,"Copied – paste it in a new tab");
   $("cpPath").onclick=()=>copy(path,"Location copied");
   $("showExt").onclick=()=>post("/api/reveal-extension",{browser:ff?"firefox":"chrome"});
