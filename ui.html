@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.png">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VDM</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mute:#9aa3b2;--acc:#1a8cff;
+--yt:#ff3d3d;--ig:#e1306c;--pin:#e60023;--ok:#2ecc71;--err:#ff6b6b;--warn:#f5b041}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+background:var(--bg);color:var(--txt);display:flex;justify-content:center;padding:28px 16px}
+.wrap{width:100%;max-width:820px}
+h1{margin:0 0 4px;font-size:28px}h1 span{color:var(--acc)}
+.sub{color:var(--mute);margin:0 0 16px}
+.badges{display:flex;gap:8px;margin-bottom:16px}
+.b{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mute)}
+.b.on{color:#fff;border-color:transparent}.b.yt.on{background:var(--yt)}.b.ig.on{background:var(--ig)}.b.pin.on{background:var(--pin)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.card h3{margin:0 0 12px;font-size:15px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+input,select,button,textarea{font:inherit;border-radius:10px;border:1px solid var(--line);background:#0f1218;color:var(--txt);padding:10px 12px}
+textarea{flex:1;min-width:240px;resize:vertical;min-height:46px;line-height:1.4}
+button{cursor:pointer;background:var(--acc);border:none;font-weight:600}
+button.ghost{background:transparent;border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
+button.sm{padding:6px 10px;font-size:13px}
+.lbl{font-size:13px;color:var(--mute);display:block;margin-bottom:6px}
+.opt{flex:1;min-width:150px}.opt select,.opt input{width:100%}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.chk input{width:16px;height:16px;padding:0;accent-color:var(--acc)}
+.preview{display:none;gap:14px;margin-top:14px}.preview img{width:190px;border-radius:10px;object-fit:cover;max-height:190px;background:#000}
+.meta h3{margin:0 0 6px;font-size:17px}.meta p{margin:2px 0;color:var(--mute);font-size:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:transparent;border:none;border-radius:0;flex:1;color:var(--mute)}.seg button.on{background:var(--acc);color:#fff}
+.err{color:var(--err);white-space:pre-wrap;font-size:14px;margin-top:10px}
+.note{color:var(--mute);font-size:13px;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 18px}
+.box{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px}
+.hidden{display:none!important}
+/* trim */
+.slider{position:relative;height:34px;margin:6px 4px 2px}
+.slider .track{position:absolute;left:0;right:0;top:15px;height:4px;background:#2a2f3a;border-radius:4px}
+.slider .sel{position:absolute;top:15px;height:4px;background:var(--acc);border-radius:4px}
+.slider input[type=range]{position:absolute;left:0;width:100%;top:6px;margin:0;padding:0;background:none;border:none;pointer-events:none;-webkit-appearance:none;appearance:none;height:22px}
+.slider input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--acc);cursor:pointer}
+.slider input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--acc);cursor:pointer}
+.slider input[type=range]::-webkit-slider-runnable-track{background:none}
+.tinfo{display:flex;justify-content:space-between;color:var(--mute);font-size:12px}
+/* folder */
+.folder{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.folder input{flex:1;min-width:240px;font-size:13px}
+/* jobs */
+.job{padding:12px 0;border-top:1px solid var(--line)}.job:first-child{border-top:none}
+.jt{display:flex;justify-content:space-between;gap:10px;font-size:14px;align-items:center}
+.jt .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:7px;background:#0f1218;border-radius:99px;margin:8px 0 4px;overflow:hidden}
+.bar>div{height:100%;width:0;background:var(--acc);transition:width .3s}
+.bar.ind>div{width:35%!important;animation:ind 1.2s infinite ease-in-out}
+@keyframes ind{0%{margin-left:-35%}100%{margin-left:100%}}
+.job.done .bar>div{background:var(--ok)}.job.error .bar>div,.job.cancelled .bar>div{background:var(--err)}
+.small{font-size:12px;color:var(--mute)}.warn{color:var(--warn);font-size:12px}
+.acts{display:flex;gap:12px;margin-top:4px}
+.link{background:none;border:none;padding:0;color:var(--acc);font-weight:500;font-size:13px;cursor:pointer}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--mute);margin-left:6px}
+.foot{color:var(--mute);font-size:12px;text-align:center;margin-top:16px;line-height:1.7}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ver{font-size:12px;padding:3px 9px;border-radius:99px;background:rgba(26,140,255,.2);color:#8fd3ff;font-weight:600}
+.topbtns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:13px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:transparent;font-weight:600}
+.pill.ok{border-color:rgba(46,204,113,.5);color:var(--ok)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto}
+.modal.open{display:flex}
+.mbox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:620px;width:100%;position:relative}
+.mbox h2{margin:0 0 6px;font-size:20px}.x{position:absolute;right:14px;top:12px;background:none;border:none;font-size:22px;color:var(--mute);cursor:pointer}
+.step{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.step:first-of-type{border-top:none}
+.num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.step p{margin:2px 0 8px;color:var(--mute);font-size:14px}.step b{color:var(--txt)}
+code.k{background:#0f1218;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:13px}
+.status{margin-top:14px;padding:12px;border-radius:12px;background:#0f1218;border:1px solid var(--line);font-size:14px}
+.status.ok{border-color:rgba(46,204,113,.5);color:var(--ok);font-weight:600}
+.qr{background:#fff;border-radius:12px;padding:10px;width:230px;height:230px;margin:12px auto}.qr svg{width:100%;height:100%}
+.sw{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}
+.chips button{background:transparent;border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:13px;color:var(--mute);font-weight:500}
+.chips button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.job{display:flex;gap:12px}.job .th{width:88px;height:56px;border-radius:8px;object-fit:cover;background:#000;flex:none}
+.job .jb{flex:1;min-width:0}
+.src{font-size:11px;color:var(--mute);margin-left:6px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f9d55;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:60;display:none}
+.foot a{color:var(--acc)}
+</style></head><body><div class="wrap">
+<div class="top"><img src="/favicon.png" alt="" style="width:40px;height:40px"><h1>V<span>DM</span></h1><span style="color:var(--mute);font-size:15px">Video <b style="font-weight:800;color:#3aa0ff">Downloads</b> Manager</span><span class="ver">v{{VERSION}}</span>
+  <div class="topbtns">
+    <a class="pill" href="/manager" style="text-decoration:none;color:var(--txt);background:var(--acc);border-color:var(--acc)">🗂 Download Manager</a>
+    <button class="pill" id="extBtn">🧩 Install browser add-on</button>
+    <button class="pill" id="phoneBtn">📱 Use on phone</button>
+    <button class="pill" id="notifBtn" title="Notifications when downloads start and finish">🔔 Notifications: off</button>
+  </div></div>
+<p class="sub">Paste YouTube, Instagram or Pinterest links (several at once is fine) and download them in one click.</p>
+<div class="badges"><span class="b yt" id="bYT">YouTube</span><span class="b ig" id="bIG">Instagram</span><span class="b pin" id="bPIN">Pinterest</span></div>
+
+<!-- LINK -->
+<div class="card">
+  <div class="row">
+    <textarea id="url" rows="1" placeholder="Paste a link… (or several, one per line)" autofocus></textarea>
+    <button class="ghost" id="pasteBtn" title="Paste from clipboard">Paste</button>
+    <button id="fetchBtn">Fetch</button>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="note hidden" id="multiNote"></div>
+  <div class="preview" id="preview">
+    <img id="thumb" alt="">
+    <div class="meta"><h3 id="title"></h3><p id="uploader"></p><p id="dur"></p><p id="items"></p></div>
+  </div>
+</div>
+
+<!-- OPTIONS -->
+<div class="card">
+  <div class="row">
+    <div class="opt" style="flex:1.3"><span class="lbl">Download as</span>
+      <div class="seg" id="modeSeg"><button class="on" data-mode="video">🎬 Video (MP4)</button><button data-mode="audio">🎵 Audio only</button></div></div>
+    <div class="opt" id="qWrap"><span class="lbl">Video quality</span>
+      <select id="quality"><option value="best">Best available</option><option value="2160">2160p (4K)</option><option value="1440">1440p</option>
+      <option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option></select></div>
+    <div class="opt hidden" id="aWrap"><span class="lbl">Audio format</span>
+      <select id="afmt"><option value="mp3">MP3</option><option value="m4a">M4A</option><option value="wav">WAV</option></select></div>
+    <div class="opt"><span class="lbl">Login from <span class="small">(for private / login-only posts)</span></span>
+      <select id="cookies"><option value="none">Off</option><option value="chrome">Chrome</option><option value="safari">Safari</option>
+      <option value="firefox">Firefox</option><option value="edge">Edge</option><option value="brave">Brave</option></select></div>
+  </div>
+
+  <!-- TRIM -->
+  <div class="box">
+    <label class="chk"><input type="checkbox" id="trimOn"> <b>✂️ Trim</b>&nbsp;<span class="small">download only part of the video</span></label>
+    <div id="trimBox" class="hidden" style="margin-top:12px">
+      <div class="slider hidden" id="slider">
+        <div class="track"></div><div class="sel" id="sel"></div>
+        <input type="range" id="rStart" min="0" max="100" step="1" value="0">
+        <input type="range" id="rEnd" min="0" max="100" step="1" value="100">
+      </div>
+      <div class="tinfo hidden" id="tinfo"><span>0:00</span><span id="tLen"></span><span id="tMax"></span></div>
+      <div class="row" style="margin-top:8px">
+        <div class="opt"><span class="lbl">Start</span><input id="tStart" placeholder="0:00"></div>
+        <div class="opt"><span class="lbl">End</span><input id="tEnd" placeholder="end of video"></div>
+        <label class="chk" style="flex:1.4;margin-bottom:10px" title="Cuts exactly at your times. Slightly slower."><input type="checkbox" id="precise" checked> Exact cut <span class="small">(a bit slower)</span></label>
+      </div>
+      <div class="note">Type times like <b>1:30</b>, <b>0:01:30</b> or <b>90</b>. Leave End empty to go to the end. Fetch the link first to get the slider.</div>
+    </div>
+  </div>
+
+  <!-- EXTRAS -->
+  <div class="box">
+    <div class="grid">
+      <label class="chk" id="compatWrap"><input type="checkbox" id="macCompat" checked> Plays in QuickTime / Windows player</label>
+      <label class="chk"><input type="checkbox" id="allItems"> All items (carousel / playlist)</label>
+      <label class="chk"><input type="checkbox" id="thumbOn"> Save cover image (JPG)</label>
+      <label class="chk" id="coverWrap"><input type="checkbox" id="embedCover" checked> Add cover art &amp; title to audio</label>
+      <div id="subsWrap"><span class="lbl">Subtitles (.srt file)</span>
+        <select id="subs" style="width:100%"><option value="off">Off</option><option value="en">English</option><option value="all">All languages</option></select></div>
+      <div><span class="lbl">File name <span class="small">(optional)</span></span><input id="fname" placeholder="Same as video title" style="width:100%"></div>
+      <div><span class="lbl">Stream came from page <span class="small">(optional, for .m3u8 / .mpd links)</span></span><input id="referer" placeholder="https://site.com/page-with-the-video" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- FOLDER -->
+  <div class="box">
+    <span class="lbl">Save to</span>
+    <div class="folder">
+      <input id="folder" spellcheck="false">
+      <button class="ghost sm" id="chooseBtn">Change…</button>
+      <button class="ghost sm" id="saveFolderBtn" title="Use the path typed in the box">Use typed path</button>
+      <button class="ghost sm" id="folderBtn">📂 Open</button>
+      <button class="link" id="resetFolder">Reset</button>
+    </div>
+    <div class="err hidden" id="folderErr"></div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <button id="dlBtn" style="flex:1;padding:13px">⬇ Download</button>
+  </div>
+</div>
+
+<!-- DOWNLOADS -->
+<div class="card">
+  <div class="jt"><h3 style="margin:0">Downloads</h3><span><span class="small" id="jobCount"></span> &nbsp; <button class="link" id="clearBtn">Clear history</button></span></div>
+  <div class="row" style="align-items:center;margin-top:8px">
+    <div class="chips" id="filters"><button class="on" data-f="all">All</button><button data-f="active">Active</button><button data-f="done">Done</button><button data-f="failed">Failed</button></div>
+    <input id="search" placeholder="Search downloads…" style="flex:1;min-width:160px;padding:7px 10px;font-size:13px">
+  </div>
+  <div id="jobs" style="margin-top:6px"><p class="small">Nothing yet.</p></div>
+</div>
+
+<p class="foot">Tip: install the VDM browser extension to get a Download button right on YouTube, Instagram and Pinterest.<br>
+No extension? Drag this to your bookmarks bar, then click it on any video page:
+<a href="javascript:void(window.open('http://127.0.0.1:{{PORT}}/?url='+encodeURIComponent(location.href)))" style="padding:2px 8px;border:1px solid var(--line);border-radius:6px;text-decoration:none">⬇ VDM</a><br>
+Only download content you own or have permission to save.</p>
+</div>
+
+<!-- ADD-ON INSTALL -->
+<div class="modal" id="extModal"><div class="mbox">
+  <button class="x" data-close>×</button>
+  <h2>🧩 Install the VDM add-on</h2>
+  <p class="small" id="extFor"></p>
+  <div id="extSteps"></div>
+  <div class="status" id="extStatus">Waiting for the add-on… (this updates by itself)</div>
+  <p class="small" style="margin-top:12px">Why not fully automatic? Browsers only allow one-click installs from their own stores, and those don't accept YouTube downloaders. This takes about 30 seconds, and you only do it once.</p>
+</div></div>
+
+<!-- PHONE -->
+<div class="modal" id="phoneModal"><div class="mbox">
+  <button class="x" data-close>×</button>
+  <h2>📱 Download on your phone</h2>
+  <p class="small">Your phone uses this computer to download, and then saves the video to the phone. Both must be on the <b>same Wi-Fi</b>, and VDM must be running here.</p>
+  <label class="sw"><input type="checkbox" id="phoneOn" style="width:20px;height:20px;accent-color:var(--acc)"> Allow my phone to use VDM</label>
+  <div id="phoneBox" class="hidden" style="text-align:center">
+    <div class="qr" id="qr"></div>
+    <p><b>Scan this with your phone's camera.</b></p>
+    <p class="small" style="word-break:break-all" id="phoneUrl"></p>
+    <p class="small">Tip: on the phone, add the page to your Home Screen so it works like an app.<br>
+      If your computer asks to allow incoming connections for VDM/Python, click <b>Allow</b>.</p>
+    <button class="link" id="phoneReset">Make a new link (old QR codes stop working)</button>
+  </div>
+  <div class="err hidden" id="phoneErr"></div>
+  <p class="small" style="margin-top:12px">🔒 Only phones with this secret link can connect, and they can't change your settings or folders. Switch this off when you don't need it.</p>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const H={"Content-Type":"application/json","X-VideoGrab":"1"};
+let mode="video", info=null, duration=0;
+const LS=(()=>{try{return window.localStorage}catch(e){return null}})();
+const pref=(k,v)=>{try{if(v===undefined)return JSON.parse(LS.getItem("vg_"+k));LS.setItem("vg_"+k,JSON.stringify(v))}catch(e){return null}};
+
+function fmt(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")}
+function parseT(v){v=(v||"").trim();if(!v)return null;if(/^\d+(\.\d+)?$/.test(v))return +v;
+  if(/^\d+(:\d{1,2}){1,2}(\.\d+)?$/.test(v))return v.split(":").reduce((a,p)=>a*60+(+p),0);
+  const m=v.toLowerCase().match(/^(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+(?:\.\d+)?)s)?$/);
+  if(m&&(m[1]||m[2]||m[3]))return (+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0);return NaN}
+function links(){return $("url").value.split(/[\s,]+/).map(s=>s.trim()).filter(s=>/^https?:\/\//i.test(s))}
+function platform(u){u=(u||"").toLowerCase();return u.includes("youtu")?"YT":u.includes("instagram")?"IG":(u.includes("pinterest")||u.includes("pin.it"))?"PIN":""}
+async function post(path,body){const r=await fetch(path,{method:"POST",headers:H,body:JSON.stringify(body||{})});
+  let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j}
+
+/* ---------- link box ---------- */
+function onUrl(){
+  const L=links(); const ps=new Set(L.map(platform));
+  ["YT","IG","PIN"].forEach(k=>$("b"+k).classList.toggle("on",ps.has(k)));
+  $("url").rows=Math.min(6,Math.max(1,$("url").value.split("\n").length));
+  if(L.length>1){$("multiNote").textContent=`${L.length} links — each will be downloaded with the options below.`;$("multiNote").classList.remove("hidden")}
+  else $("multiNote").classList.add("hidden");
+}
+$("url").addEventListener("input",onUrl);
+$("url").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&links().length<=1){e.preventDefault();fetchInfo()}});
+$("pasteBtn").onclick=async()=>{try{const t=await navigator.clipboard.readText();$("url").value=$("url").value.trim()?$("url").value.trim()+"\n"+t:t;onUrl();if(links().length===1)fetchInfo()}catch(e){$("url").focus()}};
+
+async function fetchInfo(){
+  const L=links(); if(!L.length){$("err").textContent="Paste a link first.";return}
+  if(L.length>1){$("err").textContent="";$("preview").style.display="none";return}
+  $("err").textContent="";$("fetchBtn").disabled=true;$("fetchBtn").textContent="Fetching…";
+  try{
+    info=await post("/api/info",{url:L[0],cookies:$("cookies").value,referer:$("referer").value.trim()});
+    $("thumb").src=info.thumbnail||"";$("thumb").style.display=info.thumbnail?"":"none";
+    $("title").textContent=(/^(master|index|playlist|manifest|chunklist|video|stream)\b/i.test(info.title)&&$("fname").value.trim())?$("fname").value.trim():info.title;$("uploader").textContent=info.platform+(info.uploader?" · "+info.uploader:"");
+    $("dur").textContent=info.duration?"Length: "+fmt(info.duration):"";
+    $("items").textContent=info.items>1?info.items+" items in this post/playlist (tick “All items” to get them all)":"";
+    $("preview").style.display="flex";
+    if(info.heights.length){const q=$("quality"),keep=q.value;q.innerHTML='<option value="best">Best available ('+info.heights[0]+'p)</option>'+
+      info.heights.map(h=>`<option value="${h}">${h}p</option>`).join("");q.value=keep;if(!q.value)q.value="best"}
+    setDuration(info.duration||0);
+  }catch(e){$("err").textContent=e.message;$("preview").style.display="none";setDuration(0)}
+  $("fetchBtn").disabled=false;$("fetchBtn").textContent="Fetch";
+}
+$("fetchBtn").onclick=fetchInfo;
+
+/* ---------- mode & options ---------- */
+function setMode(m){mode=m;document.querySelectorAll("#modeSeg button").forEach(x=>x.classList.toggle("on",x.dataset.mode===m));
+  $("qWrap").classList.toggle("hidden",m!=="video");$("aWrap").classList.toggle("hidden",m!=="audio");
+  $("compatWrap").classList.toggle("hidden",m!=="video");$("subsWrap").classList.toggle("hidden",m!=="video");
+  $("coverWrap").classList.toggle("hidden",m!=="audio");pref("mode",m)}
+document.querySelectorAll("#modeSeg button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+["quality","afmt","cookies","subs"].forEach(id=>$(id).addEventListener("change",()=>pref(id,$(id).value)));
+["macCompat","thumbOn","embedCover","precise"].forEach(id=>$(id).addEventListener("change",()=>pref(id,$(id).checked)));
+
+/* ---------- trim ---------- */
+$("trimOn").onchange=()=>$("trimBox").classList.toggle("hidden",!$("trimOn").checked);
+function setDuration(d){duration=Math.floor(d||0);const has=duration>0;
+  $("slider").classList.toggle("hidden",!has);$("tinfo").classList.toggle("hidden",!has);
+  if(has){$("rStart").max=$("rEnd").max=duration;$("rStart").value=0;$("rEnd").value=duration;$("tMax").textContent=fmt(duration);
+    $("tStart").value="";$("tEnd").value="";paintSlider()}}
+function paintSlider(){if(!duration)return;const a=+$("rStart").value,b=+$("rEnd").value;
+  $("sel").style.left=(a/duration*100)+"%";$("sel").style.width=((b-a)/duration*100)+"%";
+  $("tLen").textContent="Selected: "+fmt(b-a)}
+$("rStart").oninput=()=>{if(+$("rStart").value>+$("rEnd").value-1)$("rStart").value=+$("rEnd").value-1;$("tStart").value=fmt(+$("rStart").value);paintSlider()};
+$("rEnd").oninput=()=>{if(+$("rEnd").value<+$("rStart").value+1)$("rEnd").value=+$("rStart").value+1;$("tEnd").value=+$("rEnd").value>=duration?"":fmt(+$("rEnd").value);paintSlider()};
+$("tStart").oninput=()=>{const t=parseT($("tStart").value);if(duration&&t!=null&&!isNaN(t)){$("rStart").value=Math.min(t,duration);paintSlider()}};
+$("tEnd").oninput=()=>{const t=parseT($("tEnd").value);if(duration&&!isNaN(t)){$("rEnd").value=t==null?duration:Math.min(t,duration);paintSlider()}};
+
+/* ---------- folder ---------- */
+async function loadSettings(){const s=await (await fetch("/api/settings")).json();$("folder").value=s.download_dir}
+function folderErr(m){$("folderErr").textContent=m||"";$("folderErr").classList.toggle("hidden",!m)}
+$("chooseBtn").onclick=async()=>{folderErr("");$("chooseBtn").disabled=true;$("chooseBtn").textContent="Choose in the window that opened…";
+  try{const r=await post("/api/choose-folder");if(!r.cancelled)$("folder").value=r.download_dir}catch(e){folderErr(e.message)}
+  $("chooseBtn").disabled=false;$("chooseBtn").textContent="Change…"};
+async function setFolder(v){folderErr("");try{const r=await post("/api/settings",{download_dir:v});$("folder").value=r.download_dir}catch(e){folderErr(e.message)}}
+$("saveFolderBtn").onclick=()=>setFolder($("folder").value);
+$("folder").addEventListener("keydown",e=>{if(e.key==="Enter")setFolder($("folder").value)});
+$("resetFolder").onclick=()=>setFolder("");
+$("folderBtn").onclick=()=>post("/api/open-folder").catch(e=>folderErr(e.message));
+
+/* ---------- download ---------- */
+$("dlBtn").onclick=async()=>{
+  const L=links(); if(!L.length){$("err").textContent="Paste a link first.";return}
+  $("err").textContent="";
+  let start="",end="";
+  if($("trimOn").checked){
+    start=$("tStart").value.trim();end=$("tEnd").value.trim();
+    const a=parseT(start),b=parseT(end);
+    if((start&&isNaN(a))||(end&&isNaN(b))){$("err").textContent="Check the trim times — use e.g. 1:30";return}
+    if(a!=null&&b!=null&&b<=a){$("err").textContent="The trim end must be after the start.";return}
+    if(!start&&!end){$("err").textContent="Set a start and/or end time to trim, or untick Trim.";return}
+  }
+  const base={mode,quality:$("quality").value,audio_format:$("afmt").value,cookies:$("cookies").value,
+    mac_compat:$("macCompat").checked,all_items:$("allItems").checked,save_thumbnail:$("thumbOn").checked,
+    embed_cover:$("embedCover").checked,subtitles:$("subs").value,referer:$("referer").value.trim(),start,end,precise:$("precise").checked};
+  $("dlBtn").disabled=true;
+  for(const [i,url] of L.entries()){
+    let fname=$("fname").value.trim(); if(fname&&L.length>1)fname+=` ${i+1}`;
+    try{await post("/api/download",{...base,url,filename:fname,title:L.length===1&&info?info.title:"",
+      thumbnail:L.length===1&&info?info.thumbnail:"",source:"app"});
+      notify("⬇️ Download started",L.length===1&&info?info.title:url)}
+    catch(e){$("err").textContent=(L.length>1?url+": ":"")+e.message}
+  }
+  setTimeout(()=>$("dlBtn").disabled=false,600);
+  refreshJobs();
+};
+
+/* ---------- download manager ---------- */
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+let filter="all", lastStatus={}, firstLoad=true;
+document.querySelectorAll("#filters button").forEach(b=>b.onclick=()=>{filter=b.dataset.f;
+  document.querySelectorAll("#filters button").forEach(x=>x.classList.toggle("on",x===b));refreshJobs()});
+$("search").addEventListener("input",()=>refreshJobs());
+function fmtSize(b){if(!b)return"";const u=["B","KB","MB","GB"];let i=0;while(b>=1024&&i<3){b/=1024;i++}return b.toFixed(i>1?1:0)+" "+u[i]}
+const ACTIVE=j=>!["done","error","cancelled"].includes(j.status);
+async function refreshJobs(){
+  let jobs=[];try{jobs=(await (await fetch("/api/jobs")).json()).jobs}catch(e){return}
+  // notifications for downloads started in this app
+  for(const j of jobs){const prev=lastStatus[j.id];
+    if(!firstLoad&&prev&&prev!==j.status&&(j.source||"app")==="app"){
+      if(j.status==="done")notify("✅ Download finished",j.filename||j.title||j.url,j.id);
+      if(j.status==="error")notify("⚠️ Download failed",(j.title||j.url)+"\n"+(j.error||"").split("\n")[0]);}
+    lastStatus[j.id]=j.status}
+  firstLoad=false;
+  const act=jobs.filter(ACTIVE).length;
+  $("jobCount").textContent=act?`${act} active · ${jobs.length} total`:(jobs.length?`${jobs.length} total`:"");
+  document.title=act?`(${act}) VDM`:"VDM";
+  const q=$("search").value.trim().toLowerCase();
+  const shown=jobs.filter(j=>filter==="all"||(filter==="active"&&ACTIVE(j))||(filter==="done"&&j.status==="done")||(filter==="failed"&&["error","cancelled"].includes(j.status)))
+    .filter(j=>!q||[j.title,j.filename,j.url].join(" ").toLowerCase().includes(q));
+  const box=$("jobs");box.textContent="";
+  if(!shown.length){box.append(el("p","small",jobs.length?"No downloads match.":"Nothing yet."));return}
+  for(const j of shown){
+    const row=el("div","job "+j.status);
+    const th=el("img","th");th.alt="";if(j.thumbnail)th.src=j.thumbnail;else th.style.visibility="hidden";th.onerror=()=>th.style.visibility="hidden";
+    const body=el("div","jb");
+    const top=el("div","jt");const name=el("span","name",j.title||j.filename||j.url);name.title=j.filename||j.url;
+    if(j.trim)name.append(el("span","tag","✂ "+j.trim));
+    name.append(el("span","src",{extension:"🧩 add-on",phone:"📱 phone",page:"🧩 add-on",popup:"🧩 add-on",menu:"🧩 add-on"}[j.source]||""));
+    const st={done:"✓ Done",error:"Failed",cancelled:"Cancelled",cancelling:"Cancelling…",converting:"Converting…",
+      processing:"Finishing…",queued:"Waiting…",starting:"Starting…"}[j.status]||(j.indeterminate?"Downloading…":Math.round(j.percent)+"%");
+    top.append(name,el("span","small",st));body.append(top);
+    const bar=el("div","bar"+((j.indeterminate&&j.status==="downloading")||["converting","processing","starting"].includes(j.status)?" ind":""));
+    const f=el("div");f.style.width=(["done","error","cancelled"].includes(j.status)?100:(j.percent||2))+"%";bar.append(f);body.append(bar);
+    const acts=el("div","acts");
+    const meta=[j.filename&&j.status==="done"?j.filename:null,fmtSize(j.size),j.status==="downloading"?[j.speed,j.eta&&"ETA "+j.eta].filter(Boolean).join(" · "):null].filter(Boolean).join(" · ");
+    if(meta)acts.append(el("span","small",meta));
+    const btn=(t,fn)=>{const b=el("button","link",t);b.onclick=fn;acts.append(b)};
+    if(j.status==="done"){
+      if(j.exists){btn("▶ Open",()=>post("/api/open-file",{job_id:j.id}).catch(e=>alert(e.message)));btn("📂 Show in folder",()=>post("/api/open-folder",{job_id:j.id}))}
+      else acts.append(el("span","small","File was moved or deleted"));
+    }else if(["error","cancelled"].includes(j.status)){btn("↻ Retry",()=>post("/api/retry/"+j.id).then(refreshJobs).catch(e=>alert(e.message)))}
+    else if(j.status!=="cancelling")btn("✕ Cancel",()=>post("/api/cancel/"+j.id).then(refreshJobs));
+    if(!ACTIVE(j)){btn("🔗 Copy link",()=>{navigator.clipboard&&navigator.clipboard.writeText(j.url);toast("Link copied")});
+      btn("Remove",()=>post("/api/remove/"+j.id).then(refreshJobs))}
+    if(j.status==="error")body.append(el("div","err",j.error||""));
+    if(j.warning)body.append(el("div","warn","⚠ "+j.warning));
+    body.append(acts);row.append(th,body);box.append(row);
+  }
+}
+$("clearBtn").onclick=async()=>{if(confirm("Clear the download list? (Your files are kept.)")){await post("/api/clear-history");refreshJobs()}};
+setInterval(refreshJobs,1000);
+
+/* ---------- toast & notifications ---------- */
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",3500)}
+function notifOn(){return pref("notify")!==false&&("Notification" in window)&&Notification.permission==="granted"}
+function paintNotif(){$("notifBtn").textContent="🔔 Notifications: "+(notifOn()?"on":"off")}
+$("notifBtn").onclick=async()=>{
+  if(!("Notification" in window)){alert("This browser doesn't support notifications.");return}
+  if(notifOn()){pref("notify",false);paintNotif();return}
+  const r=await Notification.requestPermission();pref("notify",r==="granted");paintNotif();
+  if(r==="granted")notify("🔔 Notifications are on","You'll see when downloads start and finish.");
+  else alert("Notifications are blocked. Allow them in the browser's site settings (the icon left of the address).")};
+function notify(title,body,jobId){toast(title.replace(/^\W+\s*/,"")+(body?": "+body.split("\n")[0]:""));
+  if(!notifOn())return;try{const n=new Notification(title,{body,icon:"/favicon.png",tag:jobId||undefined});
+    n.onclick=()=>{window.focus();if(jobId)post("/api/open-folder",{job_id:jobId});n.close()}}catch(e){}}
+
+/* ---------- browser add-on install ---------- */
+function detectBrowser(){const u=navigator.userAgent;
+  if(/Firefox\//.test(u))return{id:"firefox",name:"Firefox",page:"about:debugging#/runtime/this-firefox"};
+  if(/Edg\//.test(u))return{id:"edge",name:"Microsoft Edge",page:"edge://extensions"};
+  if(/OPR\//.test(u))return{id:"opera",name:"Opera",page:"opera://extensions"};
+  if(/Vivaldi/.test(u))return{id:"vivaldi",name:"Vivaldi",page:"vivaldi://extensions"};
+  if(navigator.brave)return{id:"brave",name:"Brave",page:"brave://extensions"};
+  if(/Chrome\//.test(u))return{id:"chrome",name:"Chrome",page:"chrome://extensions"};
+  if(/Safari\//.test(u))return{id:"safari",name:"Safari",page:""};
+  return{id:"chrome",name:"your browser",page:"chrome://extensions"}}
+const BR=detectBrowser(), IS_MAC=/Mac/.test(navigator.platform||navigator.userAgent);
+let extPaths=null, extSeen=false;
+async function copy(t,label){try{await navigator.clipboard.writeText(t);toast(label||"Copied")}catch(e){prompt("Copy this:",t)}}
+function stepHTML(n,title,html){return `<div class="step"><div class="num">${n}</div><div><b>${title}</b>${html}</div></div>`}
+async function openExtModal(){
+  $("extModal").classList.add("open");
+  try{extPaths=await (await fetch("/api/extension")).json()}catch(e){}
+  $("extFor").textContent=`Detected browser: ${BR.name}`;
+  const st=$("extSteps");
+  if(BR.id==="safari"){st.innerHTML=stepHTML(1,"Safari can't load this add-on","<p>Use the <b>⬇ VDM</b> bookmark instead: scroll to the bottom of this page and drag it to your Favorites bar. On any video page, click it.</p>"+
+    "<p>Or install the add-on in Chrome, Edge, Brave or Firefox.</p>");$("extStatus").classList.add("hidden");return}
+  const ff=BR.id==="firefox", path=ff?extPaths.firefox+(IS_MAC?"/":"\\")+"manifest.json":extPaths.chrome;
+  const pasteTip=IS_MAC?"In the window that opens, press <code class='k'>⌘ Cmd</code>+<code class='k'>⇧ Shift</code>+<code class='k'>G</code>, paste with <code class='k'>⌘ Cmd</code>+<code class='k'>V</code>, press <b>Enter</b>, then click <b>"+(ff?"Open":"Select")+"</b>."
+    :"In the window that opens, click the address bar at the top, paste with <code class='k'>Ctrl</code>+<code class='k'>V</code>, press <b>Enter</b>, then click <b>"+(ff?"Open":"Select Folder")+"</b>.";
+  st.innerHTML=
+    stepHTML(1,`Open ${BR.name}'s add-ons page`,`<p>Click Copy, open a <b>new tab</b>, paste into the address bar and press Enter.</p><button class="ghost sm" id="cpPage">📋 Copy “${BR.page}”</button>`)+
+    (ff?stepHTML(2,"Click “Load Temporary Add-on…”","<p>It's on the page you just opened.</p>")
+       :stepHTML(2,"Turn on “Developer mode”",`<p>${BR.id==="edge"?"Bottom-left of the page.":"Top-right corner of the page."}</p>`))+
+    stepHTML(3,ff?"Choose the VDM file":"Click “Load unpacked” and choose the VDM folder",
+      `<p>${pasteTip}</p><button class="sm" id="cpPath">📋 Copy ${ff?"file":"folder"} location</button> <button class="ghost sm" id="showExt">📂 Show it in ${IS_MAC?"Finder":"Explorer"}</button>`)+
+    stepHTML(4,"Done!","<p>VDM opens by itself and this window turns green. "+(ff?"Note: Firefox removes test add-ons when it closes, so repeat this after restarting Firefox.":"Keep the VDM folder where it is.")+"</p>");
+  $("cpPage").onclick=()=>copy(BR.page,"Copied – paste it in a new tab");
+  $("cpPath").onclick=()=>copy(path,"Location copied");
+  $("showExt").onclick=()=>post("/api/reveal-extension",{browser:ff?"firefox":"chrome"});
+  paintExt();
+}
+function paintExt(){const s=$("extStatus");
+  if(extSeen){s.className="status ok";s.textContent=`✓ Add-on installed (v${extSeen.version||"?"} in ${extSeen.browser||"your browser"})! Look for the VDM icon in your toolbar, or the side panel.`}
+  else{s.className="status";s.textContent="Waiting for the add-on… (this updates by itself)"}
+  $("extBtn").textContent=extSeen?"🧩 Add-on installed ✓":"🧩 Install browser add-on";$("extBtn").classList.toggle("ok",!!extSeen)}
+async function checkExt(){
+  const inPage=document.documentElement.dataset.videograbExt;
+  let seen=null;try{seen=(await (await fetch("/api/extension")).json()).seen}catch(e){}
+  const now=inPage?{version:inPage,browser:BR.name}:(seen&&seen.recent?seen:null);
+  if(now&&!extSeen&&$("extModal").classList.contains("open"))toast("🧩 Add-on installed!");
+  extSeen=now;paintExt()}
+$("extBtn").onclick=openExtModal;setInterval(checkExt,2000);
+
+/* ---------- phone ---------- */
+async function paintPhone(info){
+  $("phoneOn").checked=info.enabled;$("phoneBox").classList.toggle("hidden",!info.enabled||!info.url);
+  $("qr").innerHTML=info.qr_svg||"";$("phoneUrl").textContent=info.url||"";
+  $("phoneErr").textContent=info.error||(info.enabled&&!info.url?"Couldn't find this computer's Wi-Fi address. Is it connected to Wi-Fi?":"");
+  $("phoneErr").classList.toggle("hidden",!$("phoneErr").textContent);
+  $("phoneBtn").textContent=info.enabled?"📱 Phone: on":"📱 Use on phone"}
+$("phoneBtn").onclick=async()=>{$("phoneModal").classList.add("open");paintPhone(await (await fetch("/api/phone")).json())};
+$("phoneOn").onchange=async()=>paintPhone(await post("/api/phone",{enabled:$("phoneOn").checked}));
+$("phoneReset").onclick=async()=>paintPhone(await post("/api/phone",{reset:true}));
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest(".modal").classList.remove("open"));
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")}));
+
+/* ---------- start ---------- */
+(function init(){
+  setMode(pref("mode")||"video");
+  ["quality","afmt","cookies","subs"].forEach(id=>{const v=pref(id);if(v!=null){$(id).value=v;if(!$(id).value)$(id).selectedIndex=0}});
+  ["macCompat","thumbOn","embedCover","precise"].forEach(id=>{const v=pref(id);if(v!=null)$(id).checked=v});
+  loadSettings();refreshJobs();paintNotif();checkExt();
+  fetch("/api/phone").then(r=>r.json()).then(i=>{$("phoneBtn").textContent=i.enabled?"📱 Phone: on":"📱 Use on phone"}).catch(()=>{});
+  const qs=new URLSearchParams(location.search),u=qs.get("url");
+  if(qs.get("referer"))$("referer").value=qs.get("referer");
+  if(qs.get("name"))$("fname").value=qs.get("name");
+  if(u){$("url").value=u;onUrl();fetchInfo();history.replaceState(null,"","/")}
+  if(location.hash==="#phone")$("phoneBtn").click();
+  if(location.hash==="#addon")$("extBtn").click();
+})();
+</script></body></html>

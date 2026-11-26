@@ -1,0 +1,147 @@
+==============================================================
+  VDM - Video DOWNLOADS Manager   v1.0 Beta
+  HOW TO USE (MAC)
+==============================================================
+
+
+--------------------------------------------------------------
+ FIRST TIME (once)
+--------------------------------------------------------------
+  1. Install Python: https://www.python.org/downloads/macos/
+     (big yellow Download button, then click through).
+  2. Unzip VDM.zip and put the "VDM" folder in Downloads.
+  3. Unblock it. macOS may say "Apple could not verify ... is
+     free of malware" - click "Done" (NOT "Move to Trash").
+     Then open Terminal (Cmd+Space, type Terminal), paste this
+     and press Enter:
+         xattr -dr com.apple.quarantine ~/Downloads/VDM
+     (Or: System Settings > Privacy & Security > "Open Anyway".)
+  4. Double-click "Start VDM.command". The first start takes
+     about a minute, then VDM opens in your browser at
+         http://127.0.0.1:5757
+
+  KEEP THE TERMINAL WINDOW OPEN while you use VDM.
+  Tip: drag "Start VDM.command" to your Dock.
+
+--------------------------------------------------------------
+ DOWNLOAD A VIDEO (YouTube, Instagram, Pinterest ...)
+--------------------------------------------------------------
+  1. Copy the video's link. In VDM click "Paste", then "Fetch".
+  2. Choose Video (MP4) or Audio only (MP3), and the quality.
+  3. Click "Download". When it says Done: "Open" or "Show in folder".
+
+  Several at once: paste one link per line.
+  Trim: tick "Trim" and set Start / End (like 1:30 and 2:45).
+  More: subtitles, cover image, own file name, "Login from" for
+  Instagram posts that need a login, "Save to" to pick a folder.
+
+
+--------------------------------------------------------------
+ DOWNLOAD MANAGER (like IDM) - any file, not just videos
+--------------------------------------------------------------
+  Click "Download Manager" at the top of VDM.
+
+  - Add URL: paste any link (zip, pdf, exe, music, images ...).
+    VDM splits the file into parts and downloads them at the same
+    time, so it's faster. Video pages are downloaded as videos.
+  - Resume / Stop: pause and continue later - even after closing
+    VDM or restarting the computer.
+  - Left side: Video, Music, Documents, Compressed, Programs,
+    Images, Other - plus Unfinished, Finished, Queued, Failed.
+  - Right-click a download: Open, Open folder, Redownload,
+    Copy address, Delete, Delete with file.
+  - Double-click a finished download to open it.
+  - Drag a link from your browser into the window to add it.
+  - Options: how many downloads run at once, connections per
+    file, speed limit, and where to save.
+
+
+--------------------------------------------------------------
+ BROWSER ADD-ON (Download button on websites)
+--------------------------------------------------------------
+  Install: in VDM click "Install browser add-on" and follow the
+  4 steps on screen (about 30 seconds, only once). When it's
+  installed, VDM shows "Add-on installed" and the add-on opens
+  by itself with a welcome page.
+
+  What it does:
+  - Purple "Download" button on YouTube, Instagram and Pinterest.
+  - Streamed ("blob") videos on other sites: play the video, then
+    click the VDM icon and press Download - all the pieces are
+    joined into ONE complete MP4.
+  - Takes over normal browser downloads (like IDM), so they get
+    faster downloading and pause/resume. Your browser login is
+    passed along, so downloads behind a login work too.
+    (Only while VDM is running. Change it in the add-on's Settings.)
+  - Right-click any link > "Download link with VDM (fast)".
+  - Notifications when a download starts and when it finishes,
+    with "Open" and "Show in folder" buttons.
+  - Docks in the browser's side panel so it stays on screen.
+    Turn this off in the add-on's Settings if you prefer a popup.
+  - Shortcuts: Alt+Shift+V opens VDM, Alt+Shift+D downloads the
+    video on the page you're looking at.
+  - Pin it: click the puzzle piece in the toolbar, then the pin
+    next to VDM.
+
+  Firefox removes test add-ons when it closes - install it again
+  after restarting Firefox. Chrome, Edge and Brave keep it.
+  Safari: use the "VDM" bookmark link at the bottom of VDM.
+
+
+--------------------------------------------------------------
+ DOWNLOAD ON YOUR PHONE
+--------------------------------------------------------------
+  Your phone uses the computer to download, then saves the file.
+  Phone and computer must be on the SAME Wi-Fi, VDM running.
+
+  1. In VDM click "Use on phone" and tick
+     "Allow my phone to use VDM".
+  2. Scan the QR code with your phone's camera.
+  3. On the phone: paste a link, tap Download, then
+     "Save to phone".
+  Tip: add the page to your phone's Home Screen.
+  iPhone: you can share links straight from Instagram/YouTube -
+  see "Tips for iPhone & Android" on the phone page.
+  If the computer asks to allow incoming connections, click Allow.
+  Only phones with the secret QR link can connect.
+
+
+--------------------------------------------------------------
+ NOTIFICATIONS
+--------------------------------------------------------------
+  In VDM click "Notifications: off" to turn them on, and allow
+  them when the browser asks. The add-on has its own switches
+  under Settings.
+
+
+--------------------------------------------------------------
+ PROBLEMS?
+--------------------------------------------------------------
+  "Apple could not verify" / "Move to Trash"
+      Click Done, then run in Terminal:
+         xattr -dr com.apple.quarantine ~/Downloads/VDM
+      Or start it from Terminal (never blocked):
+         cd ~/Downloads/VDM && bash start-mac-linux.sh
+  "Operation not permitted"
+      System Settings > Privacy & Security > Files & Folders >
+      Terminal > turn on "Downloads Folder", quit Terminal
+      (Cmd+Q) and start VDM again.
+  "Python 3.10 or newer was not found" -> install Python (step 1).
+  "CERTIFICATE_VERIFY_FAILED" -> Finder > Applications >
+      Python 3.x > double-click "Install Certificates.command".
+  Browser says "can't connect" to 127.0.0.1:5757
+      -> VDM isn't running. Double-click "Start VDM.command".
+  Video doesn't play in QuickTime -> keep "Plays in QuickTime /
+      Preview" ticked. Fix old ones in Terminal:
+         cd ~/Downloads/VDM && bash fix-old-videos-mac.sh
+  Safari "Login from" -> System Settings > Privacy & Security >
+      Full Disk Access > turn on Terminal.
+  A site stopped working -> close Terminal and start VDM again
+      (it updates itself).
+  "Protected with DRM" -> Netflix, Prime Video, Hotstar,
+      Disney+ etc. can't be downloaded.
+  Phone can't connect -> same Wi-Fi? "Use on phone" switched on?
+      Allow incoming connections if macOS asks.
+
+
+Only download content you own or have permission to save.

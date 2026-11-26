@@ -1,0 +1,5 @@
+flask>=3.0
+yt-dlp[default,deno]
+imageio-ffmpeg>=0.5
+certifi
+qrcode

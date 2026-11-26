@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.buildenv/
+# Build output (VDM.exe is built by build-windows-exe.bat or GitHub Actions)
+build/
+dist/
+VDM-Windows.zip
+# Firefox copy is generated from extension-chrome
+# (kept in the repo so people can load it directly)
+# OS clutter
+.DS_Store
+Thumbs.db

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VDM">
+<meta name="theme-color" content="#0f1115">
+<title>VDM</title><link rel="icon" href="/favicon.png"><link rel="apple-touch-icon" href="/favicon.png">
+<style>
+:root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mute:#9aa3b2;--acc:#1a8cff;--ok:#2ecc71;--err:#ff6b6b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+h1{margin:0;font-size:24px}h1 span{color:var(--acc)}
+.chip{font-size:11px;padding:3px 8px;border-radius:99px;background:rgba(26,140,255,.2);color:#8fd3ff;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+textarea,select,button{font:inherit;color:var(--txt);border-radius:12px;border:1px solid var(--line);background:#0f1218}
+textarea{width:100%;padding:12px;min-height:56px;resize:vertical;font-size:16px}
+select{width:100%;padding:12px}
+button{border:none;background:var(--acc);font-weight:700;padding:14px;cursor:pointer}
+button.ghost{background:transparent;border:1px solid var(--line);font-weight:600}
+.row{display:flex;gap:10px;margin-top:10px}.row>*{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px}
+.seg button{flex:1;background:transparent;border-radius:0;color:var(--mute);font-weight:600;padding:12px}
+.seg button.on{background:var(--acc);color:#fff}
+.big{width:100%;margin-top:12px;font-size:18px;padding:16px}
+.err{color:var(--err);font-size:14px;margin-top:8px;white-space:pre-wrap}
+.muted{color:var(--mute);font-size:13px}
+.job{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line)}.job:first-child{border-top:none}
+.job img{width:64px;height:64px;border-radius:10px;object-fit:cover;background:#000;flex:none}
+.jm{flex:1;min-width:0}.jt{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bar{height:6px;background:#0f1218;border-radius:9px;margin:8px 0 6px;overflow:hidden}.bar div{height:100%;background:var(--acc);transition:width .3s}
+.job.done .bar div{background:var(--ok)}.job.error .bar div,.job.cancelled .bar div{background:var(--err)}
+.acts{display:flex;gap:8px;margin-top:6px}.acts a,.acts button{flex:1;text-align:center;text-decoration:none;color:#fff;background:var(--acc);border-radius:10px;padding:10px;font-size:14px;font-weight:700}
+.acts a.ghost,.acts button.ghost{background:transparent;border:1px solid var(--line)}
+details{margin-top:8px}summary{color:var(--mute);font-size:14px}
+.tip{font-size:13px;color:var(--mute);line-height:1.5}
+</style></head><body>
+<header><img src="/favicon.png" alt="" style="width:32px;height:32px"><h1>V<span>DM</span></h1><span class="chip">v{{VERSION}}</span></header>
+<p style="margin:-6px 0 12px;color:var(--mute);font-size:14px">Video <b style="color:#3aa0ff;font-weight:800">Downloads</b> Manager</p>
+
+<div class="card">
+  <textarea id="url" placeholder="Paste a YouTube, Instagram or Pinterest link"></textarea>
+  <div class="row" id="pasteRow"><button class="ghost" id="paste">📋 Paste</button></div>
+  <div class="seg" id="mode"><button class="on" data-m="video">🎬 Video</button><button data-m="audio">🎵 Audio (MP3)</button></div>
+  <div class="row" id="qRow"><select id="quality"><option value="best">Best quality</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p (small)</option></select></div>
+  <button class="big" id="go">⬇ Download</button>
+  <div class="err" id="err"></div>
+  <p class="muted" style="margin:10px 0 0">Your computer downloads it. Then tap <b>Save to phone</b>. A copy also stays on your computer.</p>
+</div>
+
+<div class="card">
+  <b>Downloads</b>
+  <div id="jobs"><p class="muted">Nothing yet.</p></div>
+</div>
+
+<details class="card"><summary>Tips for iPhone &amp; Android</summary>
+  <p class="tip"><b>Add to Home Screen:</b> iPhone: Share ↑ → Add to Home Screen. Android: ⋮ → Add to Home screen.</p>
+  <p class="tip"><b>Save a video to Photos (iPhone):</b> tap Save to phone → Download. Then open the Files app → Downloads, tap the video, Share ↑ → Save Video.</p>
+  <p class="tip"><b>Share straight from Instagram/YouTube (iPhone):</b> make a Shortcut: Shortcuts app → + → "Receive URLs from Share Sheet" → add action <i>Open URLs</i> with:<br>
+  <code id="sc" style="word-break:break-all"></code><br>followed by the <i>Shortcut Input</i>. Name it "VDM". Now in any app tap Share → VDM.</p>
+  <p class="tip">Your phone must be on the same Wi-Fi as the computer, and VDM must be running there.</p>
+</details>
+
+<script>
+const $=id=>document.getElementById(id);
+const H={"Content-Type":"application/json","X-VideoGrab":"1"};
+let mode="video";
+async function post(p,b){const r=await fetch(p,{method:"POST",headers:H,body:JSON.stringify(b||{}),credentials:"same-origin"});
+  let j={};try{j=await r.json()}catch(e){};if(!r.ok)throw new Error(j.error||"Something went wrong");return j}
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function links(){return $("url").value.split(/[\s,]+/).filter(s=>/^https?:\/\//i.test(s))}
+
+if(!(navigator.clipboard&&navigator.clipboard.readText))$("pasteRow").style.display="none";
+$("paste").onclick=async()=>{try{$("url").value=await navigator.clipboard.readText()}catch(e){$("url").focus()}};
+document.querySelectorAll("#mode button").forEach(b=>b.onclick=()=>{mode=b.dataset.m;
+  document.querySelectorAll("#mode button").forEach(x=>x.classList.toggle("on",x===b));$("qRow").style.display=mode==="video"?"":"none"});
+
+async function start(){
+  const L=links();$("err").textContent="";
+  if(!L.length){$("err").textContent="Paste a link first.";return}
+  $("go").disabled=true;
+  for(const url of L){try{await post("/api/download",{url,mode,quality:$("quality").value,audio_format:"mp3",mac_compat:true,source:"phone"})}
+    catch(e){$("err").textContent=e.message}}
+  $("url").value="";setTimeout(()=>$("go").disabled=false,800);refresh();
+}
+$("go").onclick=start;
+
+async function refresh(){
+  let jobs=[];try{jobs=(await (await fetch("/api/jobs",{credentials:"same-origin"})).json()).jobs||[]}catch(e){return}
+  const box=$("jobs");box.textContent="";
+  if(!jobs.length){box.append(el("p","muted","Nothing yet."));return}
+  for(const j of jobs.slice(0,25)){
+    const row=el("div","job "+j.status);
+    const img=el("img");img.alt="";if(j.thumbnail){img.src=j.thumbnail;img.onerror=()=>img.remove();row.append(img)}
+    const m=el("div","jm");m.append(el("div","jt",j.title||j.filename||j.url));
+    const st={done:"✓ Ready",error:"Failed",cancelled:"Cancelled",paused:"Paused",pausing:"Pausing…",connecting:"Connecting…",converting:"Converting…",processing:"Finishing…",queued:"Waiting…",starting:"Starting…"}[j.status]
+      ||(j.indeterminate?"Downloading…":Math.round(j.percent||0)+"%");
+    m.append(el("div","muted",st+(j.speed&&j.status==="downloading"?" · "+j.speed:"")));
+    const bar=el("div","bar"),f=el("div");f.style.width=(["done","error","cancelled"].includes(j.status)?100:(j.percent||3))+"%";bar.append(f);m.append(bar);
+    if(j.status==="done"&&j.exists){const a=el("div","acts");
+      const s=el("a","","⬇ Save to phone");s.href="/api/file/"+j.id;
+      const p=el("a","ghost","▶ Play");p.href="/api/file/"+j.id+"?inline=1";p.target="_blank";a.append(s,p);m.append(a)}
+    else if(j.status==="error")m.append(el("div","err",(j.error||"").split("\n")[0]));
+    else if(!["cancelled","cancelling"].includes(j.status)){const a=el("div","acts");const c=el("button","ghost","Cancel");
+      c.onclick=()=>post("/api/cancel/"+j.id).then(refresh);a.append(c);m.append(a)}
+    row.append(m);box.append(row);
+  }
+}
+setInterval(refresh,1500);refresh();
+$("sc").textContent=location.origin+"/m?k={{KEY}}&auto=1&url=";
+// opened from a Shortcut / link: everything after "url=" is the link (it may contain its own ? and &)
+const href=location.href,ui=href.indexOf("url=");
+if(ui>-1){let u=href.slice(ui+4);try{if(/^https?%3A/i.test(u))u=decodeURIComponent(u)}catch(e){}
+  $("url").value=u;const auto=/[?&]auto=1/.test(href.slice(0,ui));history.replaceState(null,"","/m");if(auto)start()}
+</script></body></html>

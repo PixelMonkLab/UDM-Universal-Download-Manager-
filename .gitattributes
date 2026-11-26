@@ -1,0 +1,9 @@
+# Windows files need Windows line endings
+*.bat                     text eol=crlf
+*Windows.txt              text eol=crlf
+# Mac / Linux scripts need Unix line endings
+*.sh                      text eol=lf
+*.command                 text eol=lf
+# binary files
+*.png  binary
+*.ico  binary

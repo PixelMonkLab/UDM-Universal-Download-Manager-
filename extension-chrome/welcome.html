@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>VDM add-on installed</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mute:#9aa3b2;--acc:#1a8cff;--ok:#2ecc71;--err:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;padding:40px 16px}
+.wrap{max-width:660px;width:100%}
+.hero{text-align:center;margin-bottom:22px}.hero img{width:80px;height:80px}
+.hero h1{margin:10px 0 4px;font-size:30px}.hero h1 .ok{color:var(--ok)}
+.ver{display:inline-block;font-size:13px;padding:3px 10px;border-radius:99px;background:rgba(26,140,255,.22);color:#8fd3ff;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.card h3{margin:0 0 8px;font-size:17px}.muted{color:var(--mute);font-size:14px}
+button{font:inherit;border:none;border-radius:12px;background:var(--acc);color:#fff;font-weight:700;padding:14px 22px;cursor:pointer}
+button.ghost{background:transparent;border:1px solid var(--line);font-weight:600;padding:10px 16px}
+.big{font-size:18px;width:100%}
+.st{font-weight:600}.st.ok{color:var(--ok)}.st.bad{color:var(--err)}
+.hidden{display:none!important}
+ol{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
+code{background:#0f1218;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13px}
+</style></head><body><div class="wrap">
+  <div class="hero">
+    <img src="icons/128.png" alt="">
+    <h1><span class="ok">✓</span> VDM add-on installed</h1>
+    <div style="color:var(--mute);margin:2px 0 8px">VDM – Video <b style="color:#3aa0ff;font-weight:800">Downloads</b> Manager</div>
+    <span class="ver" id="ver">v1.0 Beta</span>
+  </div>
+
+  <div class="card">
+    <button class="big" id="openBtn">Open VDM</button>
+    <p class="muted" style="text-align:center;margin:10px 0 0" id="openNote">It opens docked in the side panel, so it stays on screen while you browse.</p>
+  </div>
+
+  <div class="card">
+    <h3>1 · The VDM app</h3>
+    <div id="app" class="st">Checking…</div>
+    <div id="appHelp" class="muted hidden">Start it: on Windows double-click <b>VDM.exe</b> (or start-windows.bat). On Mac double-click <b>Start VDM.command</b>. This page updates by itself.</div>
+  </div>
+
+  <div class="card">
+    <h3>2 · Keep the icon in your toolbar</h3>
+    <div id="pin" class="st">Checking…</div>
+    <ol id="pinHelp" class="muted">
+      <li>Click the puzzle piece 🧩 at the top-right of the browser.</li>
+      <li>Click the pin 📌 next to <b>VDM</b>.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>3 · How to use it</h3>
+    <ol class="muted">
+      <li>Open a YouTube video, Instagram reel or Pinterest pin and click the purple <b>⬇ Download</b> button at the bottom-right.</li>
+      <li>On other sites, play the video. The VDM icon shows a number. Open VDM and click <b>Download</b> next to the video found.</li>
+      <li>Right-click any page or link → <b>Download video with VDM</b>.</li>
+      <li>Shortcuts: <code>Alt+Shift+V</code> opens VDM, <code>Alt+Shift+D</code> downloads the video on the page.</li>
+    </ol>
+  </div>
+</div>
+<script src="common.js"></script>
+<script src="welcome.js"></script>
+</body></html>

@@ -1,0 +1,38 @@
+# Builds VDM.exe on GitHub's Windows computers.
+# Upload this folder to a GitHub repository, open the "Actions" tab,
+# choose "Build Windows app" -> "Run workflow". When it finishes, download
+# "VDM-Windows" from the bottom of the run page.
+name: Build Windows app
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install parts
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      - name: Build VDM.exe
+        run: pyinstaller --noconfirm --clean VDM.spec
+      - name: Check that the app starts
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\VDM\VDM.exe" -ArgumentList "--no-browser" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 40; $i++) {
+            Start-Sleep -Seconds 2
+            try { $r = Invoke-WebRequest "http://127.0.0.1:5757/api/ping" -UseBasicParsing -TimeoutSec 3; $r.Content; $ok = $true; break } catch {}
+          }
+          Stop-Process -Id $p.Id -Force
+          if (-not $ok) { throw "VDM.exe did not start" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VDM-Windows
+          path: dist/VDM

@@ -1,0 +1,120 @@
+{
+  "manifest_version": 3,
+  "name": "VDM – Video Downloads Manager (Beta)",
+  "short_name": "VDM",
+  "version": "1.0.0",
+  "description": "Download button on YouTube, Instagram & Pinterest, plus catches streamed (blob) videos on other sites. Saves through the VDM app on your computer.",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "VDM",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png"
+    }
+  },
+  "background": {
+    "scripts": [
+      "common.js",
+      "background.js"
+    ]
+  },
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "notifications",
+    "tabs",
+    "webRequest",
+    "downloads",
+    "cookies"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5757/*",
+    "http://localhost:5757/*",
+    "<all_urls>"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+V"
+      },
+      "description": "Open VDM"
+    },
+    "download-current": {
+      "suggested_key": {
+        "default": "Alt+Shift+D"
+      },
+      "description": "Download the video on this page"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://youtu.be/*",
+        "*://*.instagram.com/*",
+        "*://*.pinterest.com/*",
+        "*://*.pinterest.co.uk/*",
+        "*://*.pinterest.ca/*",
+        "*://*.pinterest.com.au/*",
+        "*://*.pinterest.de/*",
+        "*://*.pinterest.fr/*",
+        "*://*.pinterest.es/*",
+        "*://*.pinterest.it/*",
+        "*://*.pinterest.jp/*",
+        "*://*.pinterest.com.mx/*",
+        "*://*.pinterest.nz/*",
+        "*://*.pinterest.ie/*",
+        "*://*.pinterest.ch/*",
+        "*://*.pinterest.at/*",
+        "*://*.pinterest.se/*",
+        "*://*.pinterest.dk/*",
+        "*://*.pinterest.pt/*",
+        "*://*.pinterest.cl/*",
+        "*://*.pinterest.ph/*",
+        "*://pin.it/*"
+      ],
+      "js": [
+        "common.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://127.0.0.1:5757/*",
+        "http://localhost:5757/*"
+      ],
+      "js": [
+        "detect.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "sidebar_action": {
+    "default_panel": "popup.html?panel=1",
+    "default_title": "VDM",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    },
+    "open_at_install": false
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "vdm@local.app",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  }
+}

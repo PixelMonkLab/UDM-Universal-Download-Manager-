@@ -1,0 +1,116 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VDM</title><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header>
+    <img src="icons/48.png" alt=""><b>V<span>DM</span></b><span class="ver" id="ver">v1.0 Beta</span>
+    <span id="status" class="status">checking…</span>
+    <span class="hbtns">
+      <button id="dockBtn" class="icon" title="Dock in the side panel">⧉</button>
+      <button id="fullBtn" class="icon" title="Open the VDM Download Manager">⤢</button>
+    </span>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="dl" class="on">⬇ Download</button>
+    <button data-tab="mgr">📋 Downloads <span id="activeN" class="n hidden"></span></button>
+    <button data-tab="set">⚙ Settings</button>
+  </nav>
+
+  <section id="offline" class="card hidden">
+    <b>The VDM app isn't running</b>
+    <p>The add-on needs the app to do the downloading. Start it, then click Retry:</p>
+    <ul><li><b>Windows:</b> double-click <i>VDM.exe</i> (or <i>start-windows.bat</i>)</li>
+        <li><b>Mac:</b> double-click <i>Start VDM.command</i></li></ul>
+    <button id="retry">Retry</button>
+  </section>
+
+  <section id="perm" class="card hidden">
+    <b>One more step</b>
+    <p>Allow the add-on to talk to the VDM app on your computer and to spot videos on pages.</p>
+    <button id="grant">Allow access</button>
+  </section>
+
+  <!-- DOWNLOAD TAB -->
+  <section id="tab-dl" class="tab">
+    <div id="found" class="card hidden">
+      <div class="rowhead"><b>🎞 Videos found on this page</b><span id="foundN" class="muted"></span></div>
+      <div class="muted" style="margin-bottom:4px">Streamed / blob videos. VDM downloads all the pieces and joins them into one MP4. Play the video for a moment if it isn't listed.</div>
+      <div id="foundList"></div>
+    </div>
+
+    <div id="page" class="card">
+      <div id="pageEmpty" class="muted">Open a YouTube, Instagram or Pinterest video, or paste a link:</div>
+      <div class="row"><input id="url" placeholder="Paste a link…"><button id="fetch" class="ghost">Fetch</button></div>
+      <div id="preview" class="preview hidden">
+        <img id="thumb" alt="">
+        <div><div id="title" class="title"></div><div id="meta" class="muted"></div></div>
+      </div>
+      <div id="perr" class="err hidden"></div>
+    </div>
+
+    <div class="card">
+      <div class="seg" id="mode"><button data-v="video" class="on">🎬 Video</button><button data-v="audio">🎵 Audio</button></div>
+      <div class="row">
+        <label id="qWrap">Quality<select id="quality"><option value="best">Best</option><option value="2160">2160p (4K)</option><option value="1440">1440p</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option></select></label>
+        <label id="aWrap" class="hidden">Format<select id="afmt"><option value="mp3">MP3</option><option value="m4a">M4A</option><option value="wav">WAV</option></select></label>
+        <label>Login from<select id="cookies"><option value="none">Off</option><option value="chrome">Chrome</option><option value="safari">Safari</option><option value="firefox">Firefox</option><option value="edge">Edge</option><option value="brave">Brave</option></select></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="compat"> Plays in QuickTime / Windows player (H.264)</label>
+      <label class="chk"><input type="checkbox" id="all"> All items (carousel / playlist)</label>
+      <button id="dl" class="big">⬇ Download</button>
+      <div style="text-align:center;margin-top:8px"><button id="more" class="link">✂ Trim, subtitles &amp; more options…</button></div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD MANAGER TAB -->
+  <section id="tab-mgr" class="tab hidden">
+    <div class="card">
+      <div class="chips" id="filters"><button class="on" data-f="all">All</button><button data-f="active">Active</button><button data-f="done">Done</button><button data-f="failed">Failed</button></div>
+      <input id="search" placeholder="Search downloads…" style="margin-top:6px">
+      <div id="jobs" style="margin-top:6px"><div class="muted">Nothing yet.</div></div>
+      <div class="rowhead" style="margin-top:8px"><span id="jobCount" class="muted"></span><button id="clear" class="link">Clear finished</button></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS TAB -->
+  <section id="tab-set" class="tab hidden">
+    <div class="card">
+      <b>Where VDM opens</b>
+      <label class="chk"><input type="checkbox" id="dock"> <span id="dockLbl">Open in the side panel (docked) when I click the VDM icon</span></label>
+      <p class="muted" id="pinTip">Tip: pin VDM so its icon is always visible: click the puzzle piece 🧩 in the toolbar, then the pin 📌 next to VDM.</p>
+      <p class="muted hidden" id="pinOk"></p>
+    </div>
+    <div class="card">
+      <b>Notifications</b>
+      <label class="chk"><input type="checkbox" id="nStart"> When a download starts</label>
+      <label class="chk"><input type="checkbox" id="nDone"> When a download finishes or fails</label>
+      <button id="nTest" class="link" style="margin-top:6px">Send a test notification</button>
+    </div>
+    <div class="card">
+      <b>Browser downloads (like IDM)</b>
+      <label class="chk"><input type="checkbox" id="catchDl"> Hand my browser downloads to VDM (faster, with pause &amp; resume)</label>
+      <label style="margin-top:8px">File types to take over (* = everything)<input id="catchTypes"></label>
+      <p class="muted">Only while the VDM app is running; otherwise the browser downloads as normal. Right-click any link → <b>Download link with VDM</b> works too.</p>
+    </div>
+    <div class="card">
+      <b>On websites</b>
+      <label class="chk"><input type="checkbox" id="btn"> Show the ⬇ Download button on YouTube, Instagram &amp; Pinterest</label>
+    </div>
+    <div class="card">
+      <b>Keyboard shortcuts</b>
+      <p class="muted"><code>Alt+Shift+V</code> open VDM · <code>Alt+Shift+D</code> download the video on this page.<br>
+      Change them at <code id="scPage">chrome://extensions/shortcuts</code> <button id="scCopy" class="link">copy</button></p>
+    </div>
+    <div class="card">
+      <b>App</b>
+      <p class="muted" id="appInfo">–</p>
+      <div class="row"><button id="folder" class="ghost">📂 Downloads folder</button><button id="app" class="ghost">Open app</button></div>
+      <div class="row"><button id="phone" class="ghost">📱 Use on phone</button></div>
+      <p class="muted" style="margin-top:8px">VDM <span id="ver2">1.0 Beta</span> · Only download content you own or have permission to save.</p>
+    </div>
+  </section>
+
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body></html>
