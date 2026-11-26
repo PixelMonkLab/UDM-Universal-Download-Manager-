@@ -1,9 +1,12 @@
 # Builds VDM and publishes it.
-#  - "Run workflow" (Actions tab): builds everything; downloads appear at the bottom of the run page.
-#  - Pushing a version tag like v1.0.1-beta: also creates a public Release with download buttons.
+#  - Publish a Release on GitHub (Releases > Draft a new release > tag like v1.0.0-beta > Publish):
+#    this workflow then builds everything and attaches the download files + notes to that release.
+#  - "Run workflow" (Actions tab): just builds; downloads appear at the bottom of the run page.
 name: Build Windows app
 on:
   workflow_dispatch:
+  release:
+    types: [published]
   push:
     tags: ["v*"]
 
@@ -73,7 +76,7 @@ jobs:
 
   release:
     name: Publish release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
     needs: [windows, packages]
     runs-on: ubuntu-latest
     steps:
@@ -82,13 +85,18 @@ jobs:
         with:
           path: out
           merge-multiple: true
-      - name: Create the release
+      - name: Attach the downloads to the release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
         run: |
-          ls -la out out/* || true
           files=$(find out -name '*.zip' | sort)
-          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "VDM ${GITHUB_REF_NAME}" > "$notes"
-          # not marked "pre-release": GitHub's /releases/latest download links skip pre-releases
-          title="VDM ${GITHUB_REF_NAME#v}"; title="${title/-beta/ Beta}"
-          gh release create "$GITHUB_REF_NAME" $files --title "$title" --notes-file "$notes" --latest
+          echo "$files"
+          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "VDM ${TAG}" > "$notes"
+          title="VDM ${TAG#v}"; title="${title/-beta/ Beta}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $files --clobber
+            gh release edit "$TAG" --title "$title" --notes-file "$notes" --prerelease=false --latest
+          else
+            gh release create "$TAG" $files --title "$title" --notes-file "$notes" --latest
+          fi
