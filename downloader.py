@@ -1,10 +1,10 @@
 """
-VDM download engine for ordinary files (zip, pdf, exe, mp3, images ...) - IDM style.
+UDM download engine for ordinary files (zip, pdf, exe, mp3, images ...) - IDM style.
 
 * Splits a file into parts and downloads them over several connections at once.
 * When a connection finishes early it takes over half of the biggest remaining part ("work stealing"),
   so the download keeps all connections busy until the very end.
-* Pause / resume, even after VDM was closed (progress is saved next to the .part file).
+* Pause / resume, even after UDM was closed (progress is saved next to the .part file).
 * Falls back to one connection when the server doesn't support partial downloads.
 """
 from __future__ import annotations

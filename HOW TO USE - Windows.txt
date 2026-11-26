@@ -1,33 +1,33 @@
 ==============================================================
-  VDM - Video DOWNLOADS Manager   v1.0 Beta
+  UDM - Universal DOWNLOAD Manager   v1.0 Beta
   HOW TO USE (WINDOWS)
 ==============================================================
 
 
 --------------------------------------------------------------
- START VDM
+ START UDM
 --------------------------------------------------------------
-OPTION A - VDM.exe (no Python needed)  <-- easiest
-  1. Unzip "VDM-Windows.zip" (right-click > Extract All).
-  2. Open the "VDM" folder and double-click VDM.exe.
+OPTION A - UDM.exe (no Python needed)  <-- easiest
+  1. Unzip "UDM-Windows.zip" (right-click > Extract All).
+  2. Open the "UDM" folder and double-click UDM.exe.
   3. "Windows protected your PC"? Click "More info" >
      "Run anyway" (only the first time).
-  Keep VDM.exe and the "_internal" folder together.
-  No VDM-Windows.zip yet? See "MAKE VDM.exe" below.
+  Keep UDM.exe and the "_internal" folder together.
+  No UDM-Windows.zip yet? See "MAKE UDM.exe" below.
 
 OPTION B - With Python
   1. Install Python from https://www.python.org/downloads/windows/
      and TICK "Add python.exe to PATH" on the first screen.
-  2. Unzip VDM.zip, open the folder, double-click
+  2. Unzip UDM.zip, open the folder, double-click
      start-windows.bat. The first start takes about a minute.
 
-VDM opens in your browser at  http://127.0.0.1:5757
-KEEP THE BLACK WINDOW OPEN while you use VDM. Closing it stops VDM.
+UDM opens in your browser at  http://127.0.0.1:5757
+KEEP THE BLACK WINDOW OPEN while you use UDM. Closing it stops UDM.
 
 --------------------------------------------------------------
  DOWNLOAD A VIDEO (YouTube, Instagram, Pinterest ...)
 --------------------------------------------------------------
-  1. Copy the video's link. In VDM click "Paste", then "Fetch".
+  1. Copy the video's link. In UDM click "Paste", then "Fetch".
   2. Choose Video (MP4) or Audio only (MP3), and the quality.
   3. Click "Download". When it says Done: "Open" or "Show in folder".
 
@@ -40,13 +40,13 @@ KEEP THE BLACK WINDOW OPEN while you use VDM. Closing it stops VDM.
 --------------------------------------------------------------
  DOWNLOAD MANAGER (like IDM) - any file, not just videos
 --------------------------------------------------------------
-  Click "Download Manager" at the top of VDM.
+  Click "Download Manager" at the top of UDM.
 
   - Add URL: paste any link (zip, pdf, exe, music, images ...).
-    VDM splits the file into parts and downloads them at the same
+    UDM splits the file into parts and downloads them at the same
     time, so it's faster. Video pages are downloaded as videos.
   - Resume / Stop: pause and continue later - even after closing
-    VDM or restarting the computer.
+    UDM or restarting the computer.
   - Left side: Video, Music, Documents, Compressed, Programs,
     Images, Other - plus Unfinished, Finished, Queued, Failed.
   - Right-click a download: Open, Open folder, Redownload,
@@ -60,43 +60,43 @@ KEEP THE BLACK WINDOW OPEN while you use VDM. Closing it stops VDM.
 --------------------------------------------------------------
  BROWSER ADD-ON (Download button on websites)
 --------------------------------------------------------------
-  Install: in VDM click "Install browser add-on" and follow the
+  Install: in UDM click "Install browser add-on" and follow the
   4 steps on screen (about 30 seconds, only once). When it's
-  installed, VDM shows "Add-on installed" and the add-on opens
+  installed, UDM shows "Add-on installed" and the add-on opens
   by itself with a welcome page.
 
   What it does:
-  - Purple "Download" button on YouTube, Instagram and Pinterest.
+  - Blue "Download" button on YouTube, Instagram and Pinterest.
   - Streamed ("blob") videos on other sites: play the video, then
-    click the VDM icon and press Download - all the pieces are
+    click the UDM icon and press Download - all the pieces are
     joined into ONE complete MP4.
   - Takes over normal browser downloads (like IDM), so they get
     faster downloading and pause/resume. Your browser login is
     passed along, so downloads behind a login work too.
-    (Only while VDM is running. Change it in the add-on's Settings.)
-  - Right-click any link > "Download link with VDM (fast)".
+    (Only while UDM is running. Change it in the add-on's Settings.)
+  - Right-click any link > "Download link with UDM (fast)".
   - Notifications when a download starts and when it finishes,
     with "Open" and "Show in folder" buttons.
   - Docks in the browser's side panel so it stays on screen.
     Turn this off in the add-on's Settings if you prefer a popup.
-  - Shortcuts: Alt+Shift+V opens VDM, Alt+Shift+D downloads the
+  - Shortcuts: Alt+Shift+V opens UDM, Alt+Shift+D downloads the
     video on the page you're looking at.
   - Pin it: click the puzzle piece in the toolbar, then the pin
-    next to VDM.
+    next to UDM.
 
   Firefox removes test add-ons when it closes - install it again
   after restarting Firefox. Chrome, Edge and Brave keep it.
-  Safari: use the "VDM" bookmark link at the bottom of VDM.
+  Safari: use the "UDM" bookmark link at the bottom of UDM.
 
 
 --------------------------------------------------------------
  DOWNLOAD ON YOUR PHONE
 --------------------------------------------------------------
   Your phone uses the computer to download, then saves the file.
-  Phone and computer must be on the SAME Wi-Fi, VDM running.
+  Phone and computer must be on the SAME Wi-Fi, UDM running.
 
-  1. In VDM click "Use on phone" and tick
-     "Allow my phone to use VDM".
+  1. In UDM click "Use on phone" and tick
+     "Allow my phone to use UDM".
   2. Scan the QR code with your phone's camera.
   3. On the phone: paste a link, tap Download, then
      "Save to phone".
@@ -110,19 +110,19 @@ KEEP THE BLACK WINDOW OPEN while you use VDM. Closing it stops VDM.
 --------------------------------------------------------------
  NOTIFICATIONS
 --------------------------------------------------------------
-  In VDM click "Notifications: off" to turn them on, and allow
+  In UDM click "Notifications: off" to turn them on, and allow
   them when the browser asks. The add-on has its own switches
   under Settings.
 
 
 --------------------------------------------------------------
- MAKE VDM.exe (only once, on any Windows PC)
+ MAKE UDM.exe (only once, on any Windows PC)
 --------------------------------------------------------------
   1. Install Python (Option B, step 1).
   2. Double-click build-windows-exe.bat.
-  3. Wait 2-5 minutes. You get dist\VDM\VDM.exe and
-     VDM-Windows.zip - share that zip with anyone on Windows.
-  VDM.exe keeps its download engine up to date by itself.
+  3. Wait 2-5 minutes. You get dist\UDM\UDM.exe and
+     UDM-Windows.zip - share that zip with anyone on Windows.
+  UDM.exe keeps its download engine up to date by itself.
   Using GitHub? Upload the folder, open "Actions" and run
   "Build Windows app" to get the same result.
 
@@ -131,19 +131,19 @@ KEEP THE BLACK WINDOW OPEN while you use VDM. Closing it stops VDM.
  PROBLEMS?
 --------------------------------------------------------------
   "Windows protected your PC" -> More info > Run anyway.
-  Antivirus blocks VDM.exe -> allow it, or use Option B.
+  Antivirus blocks UDM.exe -> allow it, or use Option B.
   Browser says "can't be reached" at 127.0.0.1:5757
-      -> VDM isn't running. Start it again.
-  Add-on says "app not running" -> start VDM, then Retry.
+      -> UDM isn't running. Start it again.
+  Add-on says "app not running" -> start UDM, then Retry.
   Instagram says "login required" -> set "Login from" to the
       browser you're logged in with (close Chrome/Edge first if
       it can't read the login).
-  A site stopped working -> close VDM and start it again
+  A site stopped working -> close UDM and start it again
       (it updates itself).
   "Protected with DRM" -> Netflix, Prime Video, Hotstar,
       Disney+ etc. can't be downloaded.
   Phone can't connect -> same Wi-Fi? "Use on phone" switched on?
-      Allow VDM in Windows Firewall when asked.
+      Allow UDM in Windows Firewall when asked.
 
 
 Only download content you own or have permission to save.

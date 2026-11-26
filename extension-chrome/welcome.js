@@ -1,13 +1,13 @@
-/* VDM add-on – welcome page shown right after installing */
+/* UDM add-on – welcome page shown right after installing */
 const api = VG.api;
 const $ = (id) => document.getElementById(id);
 const m = api.runtime.getManifest();
 $("ver").textContent = "v" + VG.VERSION_LABEL;
 const hasPanel = !!(api.sidePanel && api.sidePanel.open);
 const hasSidebar = !!api.sidebarAction;
-if (!hasPanel && !hasSidebar) $("openNote").textContent = "It opens from the VDM icon in your toolbar.";
+if (!hasPanel && !hasSidebar) $("openNote").textContent = "It opens from the UDM icon in your toolbar.";
 
-async function openVDM(auto) {
+async function openUDM(auto) {
   const s = await VG.getSettings();
   try {
     if (s.dock && hasPanel) {                       // Chrome / Edge: docked side panel
@@ -28,17 +28,17 @@ async function openVDM(auto) {
   if (!auto) api.tabs.create({ url: api.runtime.getURL("popup.html?full=1") });
   return false;
 }
-$("openBtn").onclick = () => openVDM(false);
-// open VDM automatically right after installing (browsers may require the click instead)
-setTimeout(() => openVDM(true), 600);
+$("openBtn").onclick = () => openUDM(false);
+// open UDM automatically right after installing (browsers may require the click instead)
+setTimeout(() => openUDM(true), 600);
 
 async function check() {
   try {
     const p = await VG.send({ type: "ping" });
-    $("app").textContent = `✓ Connected to the VDM app (${p.version_label || p.version}). Saving to ${p.folder}`;
+    $("app").textContent = `✓ Connected to the UDM app (${p.version_label || p.version}). Saving to ${p.folder}`;
     $("app").className = "st ok"; $("appHelp").classList.add("hidden");
   } catch (e) {
-    $("app").textContent = "✗ The VDM app isn't running yet.";
+    $("app").textContent = "✗ The UDM app isn't running yet.";
     $("app").className = "st bad"; $("appHelp").classList.remove("hidden");
   }
   try {

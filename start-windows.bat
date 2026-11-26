@@ -1,11 +1,11 @@
 @echo off
-title VDM
+title UDM
 cd /d "%~dp0"
 echo.
-echo === VDM ===
+echo === UDM ===
 
 rem Already running? Just open it.
-curl -s -m 2 http://127.0.0.1:5757/api/ping 2>nul | find "VDM" >nul && (echo VDM is already running. & start "" "http://127.0.0.1:5757" & exit /b 0)
+curl -s -m 2 http://127.0.0.1:5757/api/ping 2>nul | find "UDM" >nul && (echo UDM is already running. & start "" "http://127.0.0.1:5757" & exit /b 0)
 
 rem 1. Find Python 3.10+ (prefer the "py" launcher; skip the Microsoft Store stub)
 set "PY="

@@ -1,4 +1,4 @@
-/* VDM extension – on-page Download button for YouTube, Instagram and Pinterest */
+/* UDM extension – on-page Download button for YouTube, Instagram and Pinterest */
 (() => {
   if (window.__videograbLoaded) return;
   window.__videograbLoaded = true;
@@ -39,7 +39,7 @@
   root.innerHTML = `<style>${CSS}</style>
     <div class="wrap">
       <div class="menu" part="menu"></div>
-      <button class="pill" title="Download with VDM"><div class="fill"></div><span class="label">⬇ Download</span></button>
+      <button class="pill" title="Download with UDM"><div class="fill"></div><span class="label">⬇ Download</span></button>
     </div>`;
   const pill = root.querySelector(".pill");
   const fill = root.querySelector(".fill");
@@ -81,13 +81,13 @@
     menu.textContent = "";
     const job = jobsByUrl[currentUrl];
     if (job && job.status === "error") {
-      menu.append(el("h4", "", job.offline ? "VDM app isn't running" : "Download failed"));
+      menu.append(el("h4", "", job.offline ? "UDM app isn't running" : "Download failed"));
       menu.append(el("div", "msg " + (job.offline ? "" : "err"),
-        job.offline ? "Start VDM on your computer first:\n• Mac: double-click “Start VDM.command”\n• Windows: double-click “start-windows.bat”" : job.error));
+        job.offline ? "Start UDM on your computer first:\n• Mac: double-click “Start UDM.command”\n• Windows: double-click “start-windows.bat”" : job.error));
       menu.append(el("div", "sep"));
     } else if (job && job.status === "done") {
       menu.append(el("h4", "", "Saved"));
-      menu.append(el("div", "msg", job.filename || "Saved to Downloads/VDM"));
+      menu.append(el("div", "msg", job.filename || "Saved to Downloads/UDM"));
       const show = el("button", "item"); show.append(el("span", "", "📂 Show in folder"));
       show.onclick = () => { VG.send({ type: "reveal", job_id: job.job_id }).catch(() => {}); closeMenu(); };
       menu.append(show, el("div", "sep"));
@@ -180,7 +180,7 @@
       const h = document.createElement("div");
       h.className = "videograb-mini";
       const r = h.attachShadow({ mode: "open" });
-      r.innerHTML = `<style>${CSS}</style><button class="mini" title="Download with VDM">⬇ Download</button>`;
+      r.innerHTML = `<style>${CSS}</style><button class="mini" title="Download with UDM">⬇ Download</button>`;
       const b = r.querySelector("button");
       let job = null, timer = null;
       const show = () => {
@@ -188,7 +188,7 @@
         b.className = "mini " + (job.status === "done" ? "ok" : job.status === "error" ? (job.offline ? "off" : "err") : "");
         b.textContent = job.status === "done" ? "✓ Saved" : job.status === "error" ? (job.offline ? "⚠ App off" : "⚠ Failed")
           : job.status === "downloading" ? `⬇ ${Math.round(job.percent || 0)}%` : job.status === "converting" ? "Converting…" : "Starting…";
-        b.title = job.status === "error" ? job.error : job.status === "done" ? "Click to show in folder" : "Download with VDM";
+        b.title = job.status === "error" ? job.error : job.status === "done" ? "Click to show in folder" : "Download with UDM";
       };
       b.onclick = async (e) => {
         e.preventDefault(); e.stopPropagation();

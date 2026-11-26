@@ -1,15 +1,15 @@
-## VDM – Video **Downloads** Manager · v1.0 Beta
+## UDM – Universal **Download** Manager · v1.0 Beta
 
 ### ⬇ Which file do I need?
 | You have | Download | Then |
 |---|---|---|
-| **Windows** | **VDM-Windows.zip** | Unzip → open the VDM folder → double-click **VDM.exe**. No Python needed. |
-| **Mac** | **VDM-Mac-Linux.zip** | Unzip → follow **HOW TO USE - Mac.txt** (needs Python from python.org). |
-| **Linux** | **VDM-Mac-Linux.zip** | Unzip → run `bash start-mac-linux.sh` |
-| Browser add-on (Chrome, Edge, Brave, Opera) | **VDM-addon-chrome-manual.zip** | Easiest: in VDM click **🧩 Install browser add-on** |
-| Browser add-on (Firefox) | **VDM-addon-firefox.zip** | In VDM click **🧩 Install browser add-on** |
+| **Windows** | **UDM-Windows.zip** | Unzip → open the UDM folder → double-click **UDM.exe**. No Python needed. |
+| **Mac** | **UDM-Mac-Linux.zip** | Unzip → follow **HOW TO USE - Mac.txt** (needs Python from python.org). |
+| **Linux** | **UDM-Mac-Linux.zip** | Unzip → run `bash start-mac-linux.sh` |
+| Browser add-on (Chrome, Edge, Brave, Opera) | **UDM-addon-chrome-manual.zip** | Easiest: in UDM click **🧩 Install browser add-on** |
+| Browser add-on (Firefox) | **UDM-addon-firefox.zip** | In UDM click **🧩 Install browser add-on** |
 
-_Store packages (`VDM-addon-edge.zip`, `VDM-addon-chrome-store.zip`) are for publishing to the add-on stores._
+_Store packages (`UDM-addon-edge.zip`, `UDM-addon-chrome-store.zip`) are for publishing to the add-on stores._
 
 ### What's inside
 - 🎬 **Video downloader:** YouTube, Instagram, Pinterest and streamed (blob) videos, up to 4K, MP3, trim, subtitles, batch.

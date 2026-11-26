@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VDM</title>
+<title>UDM</title>
 <style>
 :root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mute:#9aa3b2;--acc:#1a8cff;
 --yt:#ff3d3d;--ig:#e1306c;--pin:#e60023;--ok:#2ecc71;--err:#ff6b6b;--warn:#f5b041}
@@ -86,7 +86,7 @@ code.k{background:#0f1218;border:1px solid var(--line);border-radius:6px;padding
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f9d55;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:60;display:none}
 .foot a{color:var(--acc)}
 </style></head><body><div class="wrap">
-<div class="top"><img src="/favicon.png" alt="" style="width:40px;height:40px"><h1>V<span>DM</span></h1><span style="color:var(--mute);font-size:15px">Video <b style="font-weight:800;color:#3aa0ff">Downloads</b> Manager</span><span class="ver">v{{VERSION}}</span>
+<div class="top"><img src="/favicon.png" alt="" style="width:40px;height:40px"><h1>U<span>DM</span></h1><span style="color:var(--mute);font-size:15px">Universal <b style="font-weight:800;color:#3aa0ff">Download</b> Manager</span><span class="ver">v{{VERSION}}</span>
   <div class="topbtns">
     <a class="pill" href="/manager" style="text-decoration:none;color:var(--txt);background:var(--acc);border-color:var(--acc)">🗂 Download Manager</a>
     <button class="pill" id="extBtn">🧩 Install browser add-on</button>
@@ -187,16 +187,16 @@ code.k{background:#0f1218;border:1px solid var(--line);border-radius:6px;padding
   <div id="jobs" style="margin-top:6px"><p class="small">Nothing yet.</p></div>
 </div>
 
-<p class="foot">Tip: install the VDM browser extension to get a Download button right on YouTube, Instagram and Pinterest.<br>
+<p class="foot">Tip: install the UDM browser extension to get a Download button right on YouTube, Instagram and Pinterest.<br>
 No extension? Drag this to your bookmarks bar, then click it on any video page:
-<a href="javascript:void(window.open('http://127.0.0.1:{{PORT}}/?url='+encodeURIComponent(location.href)))" style="padding:2px 8px;border:1px solid var(--line);border-radius:6px;text-decoration:none">⬇ VDM</a><br>
+<a href="javascript:void(window.open('http://127.0.0.1:{{PORT}}/?url='+encodeURIComponent(location.href)))" style="padding:2px 8px;border:1px solid var(--line);border-radius:6px;text-decoration:none">⬇ UDM</a><br>
 Only download content you own or have permission to save.</p>
 </div>
 
 <!-- ADD-ON INSTALL -->
 <div class="modal" id="extModal"><div class="mbox">
   <button class="x" data-close>×</button>
-  <h2>🧩 Install the VDM add-on</h2>
+  <h2>🧩 Install the UDM add-on</h2>
   <p class="small" id="extFor"></p>
   <div id="extSteps"></div>
   <div class="status" id="extStatus">Waiting for the add-on… (this updates by itself)</div>
@@ -207,14 +207,14 @@ Only download content you own or have permission to save.</p>
 <div class="modal" id="phoneModal"><div class="mbox">
   <button class="x" data-close>×</button>
   <h2>📱 Download on your phone</h2>
-  <p class="small">Your phone uses this computer to download, and then saves the video to the phone. Both must be on the <b>same Wi-Fi</b>, and VDM must be running here.</p>
-  <label class="sw"><input type="checkbox" id="phoneOn" style="width:20px;height:20px;accent-color:var(--acc)"> Allow my phone to use VDM</label>
+  <p class="small">Your phone uses this computer to download, and then saves the video to the phone. Both must be on the <b>same Wi-Fi</b>, and UDM must be running here.</p>
+  <label class="sw"><input type="checkbox" id="phoneOn" style="width:20px;height:20px;accent-color:var(--acc)"> Allow my phone to use UDM</label>
   <div id="phoneBox" class="hidden" style="text-align:center">
     <div class="qr" id="qr"></div>
     <p><b>Scan this with your phone's camera.</b></p>
     <p class="small" style="word-break:break-all" id="phoneUrl"></p>
     <p class="small">Tip: on the phone, add the page to your Home Screen so it works like an app.<br>
-      If your computer asks to allow incoming connections for VDM/Python, click <b>Allow</b>.</p>
+      If your computer asks to allow incoming connections for UDM/Python, click <b>Allow</b>.</p>
     <button class="link" id="phoneReset">Make a new link (old QR codes stop working)</button>
   </div>
   <div class="err hidden" id="phoneErr"></div>
@@ -353,7 +353,7 @@ async function refreshJobs(){
   firstLoad=false;
   const act=jobs.filter(ACTIVE).length;
   $("jobCount").textContent=act?`${act} active · ${jobs.length} total`:(jobs.length?`${jobs.length} total`:"");
-  document.title=act?`(${act}) VDM`:"VDM";
+  document.title=act?`(${act}) UDM`:"UDM";
   const q=$("search").value.trim().toLowerCase();
   const shown=jobs.filter(j=>filter==="all"||(filter==="active"&&ACTIVE(j))||(filter==="done"&&j.status==="done")||(filter==="failed"&&["error","cancelled"].includes(j.status)))
     .filter(j=>!q||[j.title,j.filename,j.url].join(" ").toLowerCase().includes(q));
@@ -423,7 +423,7 @@ async function openExtModal(){
   try{extPaths=await (await fetch("/api/extension")).json()}catch(e){}
   $("extFor").textContent=`Detected browser: ${BR.name}`;
   const st=$("extSteps");
-  if(BR.id==="safari"){st.innerHTML=stepHTML(1,"Safari can't load this add-on","<p>Use the <b>⬇ VDM</b> bookmark instead: scroll to the bottom of this page and drag it to your Favorites bar. On any video page, click it.</p>"+
+  if(BR.id==="safari"){st.innerHTML=stepHTML(1,"Safari can't load this add-on","<p>Use the <b>⬇ UDM</b> bookmark instead: scroll to the bottom of this page and drag it to your Favorites bar. On any video page, click it.</p>"+
     "<p>Or install the add-on in Chrome, Edge, Brave or Firefox.</p>");$("extStatus").classList.add("hidden");return}
   const ff=BR.id==="firefox", path=ff?extPaths.firefox+(IS_MAC?"/":"\\")+"manifest.json":extPaths.chrome;
   const pasteTip=IS_MAC?"In the window that opens, press <code class='k'>⌘ Cmd</code>+<code class='k'>⇧ Shift</code>+<code class='k'>G</code>, paste with <code class='k'>⌘ Cmd</code>+<code class='k'>V</code>, press <b>Enter</b>, then click <b>"+(ff?"Open":"Select")+"</b>."
@@ -432,9 +432,9 @@ async function openExtModal(){
     stepHTML(1,`Open ${BR.name}'s add-ons page`,`<p>Click Copy, open a <b>new tab</b>, paste into the address bar and press Enter.</p><button class="ghost sm" id="cpPage">📋 Copy “${BR.page}”</button>`)+
     (ff?stepHTML(2,"Click “Load Temporary Add-on…”","<p>It's on the page you just opened.</p>")
        :stepHTML(2,"Turn on “Developer mode”",`<p>${BR.id==="edge"?"Bottom-left of the page.":"Top-right corner of the page."}</p>`))+
-    stepHTML(3,ff?"Choose the VDM file":"Click “Load unpacked” and choose the VDM folder",
+    stepHTML(3,ff?"Choose the UDM file":"Click “Load unpacked” and choose the UDM folder",
       `<p>${pasteTip}</p><button class="sm" id="cpPath">📋 Copy ${ff?"file":"folder"} location</button> <button class="ghost sm" id="showExt">📂 Show it in ${IS_MAC?"Finder":"Explorer"}</button>`)+
-    stepHTML(4,"Done!","<p>VDM opens by itself and this window turns green. "+(ff?"Note: Firefox removes test add-ons when it closes, so repeat this after restarting Firefox.":"Keep the VDM folder where it is.")+"</p>");
+    stepHTML(4,"Done!","<p>UDM opens by itself and this window turns green. "+(ff?"Note: Firefox removes test add-ons when it closes, so repeat this after restarting Firefox.":"Keep the UDM folder where it is.")+"</p>");
   const store=(extPaths&&extPaths.store)||{};
   const link=ff?store.firefox:(BR.id==="edge"?(store.edge||store.chrome):store.chrome);
   $("extWhy").classList.toggle("hidden",!!link);
@@ -456,7 +456,7 @@ async function openExtModal(){
   paintExt();
 }
 function paintExt(){const s=$("extStatus");
-  if(extSeen){s.className="status ok";s.textContent=`✓ Add-on installed (v${extSeen.version||"?"} in ${extSeen.browser||"your browser"})! Look for the VDM icon in your toolbar, or the side panel.`}
+  if(extSeen){s.className="status ok";s.textContent=`✓ Add-on installed (v${extSeen.version||"?"} in ${extSeen.browser||"your browser"})! Look for the UDM icon in your toolbar, or the side panel.`}
   else{s.className="status";s.textContent="Waiting for the add-on… (this updates by itself)"}
   $("extBtn").textContent=extSeen?"🧩 Add-on installed ✓":"🧩 Install browser add-on";$("extBtn").classList.toggle("ok",!!extSeen)}
 async function checkExt(){

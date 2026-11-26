@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VDM Download Manager</title>
+<title>UDM Download Manager</title>
 <style>
 :root{--bg:#0f1115;--panel:#14171d;--card:#181b22;--line:#2a2f3a;--txt:#e9ecf1;--mute:#9aa3b2;--acc:#1a8cff;--ok:#2ecc71;--err:#ff6b6b;--warn:#f5b041;--sel:#10294a}
 *{box-sizing:border-box}html,body{height:100%}
@@ -79,7 +79,7 @@ canvas.map{width:100%;height:22px;border-radius:6px;background:#0f1218;margin-to
 </style></head><body>
 
 <div class="titlebar">
-  <img src="/favicon.png" alt=""><b>V<span>DM</span></b><span style="color:var(--mute)">Video <b style="font-weight:800;color:#3aa0ff">Downloads</b> Manager</span><span class="ver">v{{VERSION}}</span>
+  <img src="/favicon.png" alt=""><b>U<span>DM</span></b><span style="color:var(--mute)">Universal <b style="font-weight:800;color:#3aa0ff">Download</b> Manager</span><span class="ver">v{{VERSION}}</span>
   <div class="right"><span id="totSpeed"></span><a href="/">⬇ Video downloader</a></div>
 </div>
 
@@ -118,7 +118,7 @@ canvas.map{width:100%;height:22px;border-radius:6px;background:#0f1218;margin-to
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
-      <div class="empty" id="empty"><b>No downloads here yet</b>Click <b>➕ Add URL</b>, paste or drag a link into this window, or download from your browser with the VDM add-on.</div>
+      <div class="empty" id="empty"><b>No downloads here yet</b>Click <b>➕ Add URL</b>, paste or drag a link into this window, or download from your browser with the UDM add-on.</div>
     </div>
     <div class="details" id="details"><div class="hint">Select a download to see its details.</div></div>
   </section>
@@ -161,7 +161,7 @@ canvas.map{width:100%;height:22px;border-radius:6px;background:#0f1218;margin-to
   </div>
   <div class="f"><label>Speed limit (KB/s, 0 = no limit)</label><input id="oLimit" type="number" min="0" step="100"></div>
   <div class="f"><label>Save downloads to</label><div class="row"><input id="oFolder"><button class="btn ghost" id="oChoose" style="flex:0 0 auto">Change…</button></div></div>
-  <p class="hint">Browser downloads: with the VDM add-on installed, downloads you start in Chrome, Edge, Brave or Firefox are handed to VDM automatically. Change this in the add-on's ⚙ Settings.</p>
+  <p class="hint">Browser downloads: with the UDM add-on installed, downloads you start in Chrome, Edge, Brave or Firefox are handed to UDM automatically. Change this in the add-on's ⚙ Settings.</p>
   <div class="err" id="oErr"></div>
   <div class="mbtns"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="oSave">Save</button></div>
 </div></div>
@@ -179,7 +179,7 @@ function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";cle
 function size(b){if(!b)return"";const u=["B","KB","MB","GB","TB"];let i=0;while(b>=1024&&i<4){b/=1024;i++}return b.toFixed(i>1?2:0)+" "+u[i]}
 function ago(t){if(!t)return"";const d=new Date(t*1000),n=new Date();return d.toDateString()===n.toDateString()?d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString()}
 const ICON={Video:"🎬",Music:"🎵",Documents:"📄",Compressed:"🗜️",Programs:"💿",Images:"🖼️",Other:"📦"};
-const SRC={app:"VDM",extension:"Browser",popup:"Browser",page:"Browser",menu:"Browser",shortcut:"Browser",catch:"Browser",phone:"Phone"};
+const SRC={app:"UDM",extension:"Browser",popup:"Browser",page:"Browser",menu:"Browser",shortcut:"Browser",catch:"Browser",phone:"Phone"};
 const ACTIVE=["queued","starting","connecting","downloading","processing","converting","pausing","cancelling"];
 const VIDEO_SITES=/(youtube\.com|youtu\.be|instagram\.com|pinterest\.|pin\.it|tiktok\.com|facebook\.com|fb\.watch|twitter\.com|x\.com|vimeo\.com|dailymotion\.com|reddit\.com)/i;
 let jobs=[],cat="all",sortK="ts",sortDir=-1,sel=new Set(),lastSel=null,settings={};
@@ -322,7 +322,7 @@ async function openAdd(prefill){
   let t=prefill||"";if(!t){try{const c=await navigator.clipboard.readText();if(urls(c).length)t=c.trim()}catch(e){}}
   $("aUrl").value=t;hint();setTimeout(()=>$("aUrl").focus(),50)}
 function hint(){const u=urls($("aUrl").value);const v=u.filter(x=>VIDEO_SITES.test(x));
-  $("aHint").textContent=v.length?`🎬 ${v.length===u.length?"This is a video page":"Some links are video pages"} – VDM will download the video itself (best quality).`:""}
+  $("aHint").textContent=v.length?`🎬 ${v.length===u.length?"This is a video page":"Some links are video pages"} – UDM will download the video itself (best quality).`:""}
 $("aUrl").oninput=hint;
 async function addNow(paused){
   const u=urls($("aUrl").value);if(!u.length){$("aErr").textContent="Enter a link that starts with http:// or https://";return}
@@ -359,7 +359,7 @@ async function refresh(){
     const sp=r.stats&&r.stats.speed_bps?size(r.stats.speed_bps)+"/s":"";
     $("sbRun").textContent=`${run} downloading`;$("sbQueue").textContent=`${q} queued`;
     $("sbSpeed").textContent=sp?"Total speed: "+sp:"";$("totSpeed").textContent=sp?"⬇ "+sp:"";
-    document.title=run?`(${run}) VDM Download Manager`:"VDM Download Manager";
-    render()}catch(e){$("sbRun").textContent="⚠ VDM isn't responding"}}
+    document.title=run?`(${run}) UDM Download Manager`:"UDM Download Manager";
+    render()}catch(e){$("sbRun").textContent="⚠ UDM isn't responding"}}
 (async()=>{settings=await (await fetch("/api/settings")).json();$("sbFolder").textContent="Saving to "+settings.download_dir;refresh();setInterval(refresh,1000)})();
 </script></body></html>

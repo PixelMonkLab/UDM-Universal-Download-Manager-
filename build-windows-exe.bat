@@ -1,8 +1,8 @@
 @echo off
-title Build VDM.exe
+title Build UDM.exe
 cd /d "%~dp0"
 echo.
-echo === Building VDM.exe (takes 2-5 minutes) ===
+echo === Building UDM.exe (takes 2-5 minutes) ===
 echo.
 
 rem Find Python 3.10+ (only needed on THIS computer, to build the app once)
@@ -26,18 +26,18 @@ echo Installing parts...
 ".buildenv\Scripts\python.exe" -m pip install -q --upgrade -r requirements.txt pyinstaller || (echo Installing failed. Check your internet. & pause & exit /b 1)
 
 echo Building...
-".buildenv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --log-level WARN VDM.spec || (echo Build failed - see the messages above. & pause & exit /b 1)
+".buildenv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --log-level WARN UDM.spec || (echo Build failed - see the messages above. & pause & exit /b 1)
 
 echo Making a zip you can share...
-powershell -NoProfile -Command "Compress-Archive -Force -Path 'dist\VDM' -DestinationPath 'VDM-Windows.zip'"
+powershell -NoProfile -Command "Compress-Archive -Force -Path 'dist\UDM' -DestinationPath 'UDM-Windows.zip'"
 
 echo.
 echo ============================================================
 echo  Done!
-echo  Your app:   dist\VDM\VDM.exe   (double-click it)
-echo  To share:   send VDM-Windows.zip
-echo              (keep the whole VDM folder together - the
+echo  Your app:   dist\UDM\UDM.exe   (double-click it)
+echo  To share:   send UDM-Windows.zip
+echo              (keep the whole UDM folder together - the
 echo               .exe needs the _internal folder next to it)
 echo ============================================================
-explorer "dist\VDM"
+explorer "dist\UDM"
 pause

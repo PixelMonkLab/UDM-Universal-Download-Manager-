@@ -1,5 +1,5 @@
 #!/bin/bash
-# Converts videos already in Downloads/VDM so they play in QuickTime / Preview
+# Converts videos already in Downloads/UDM so they play in QuickTime / Preview
 cd "$(dirname "$0")"
 [ -d .venv ] || python3 -m venv .venv
 source .venv/bin/activate

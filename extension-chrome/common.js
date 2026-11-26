@@ -1,4 +1,4 @@
-/* VDM extension – shared helpers (used by content script, popup and background) */
+/* UDM extension – shared helpers (used by content script, popup and background) */
 var VG = (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   const BASE = "http://127.0.0.1:5757";
@@ -20,7 +20,7 @@ var VG = (() => {
     if (EDITION !== "store") return false;
     try { return STORE_BLOCKED.test(new URL(url).hostname); } catch (e) { return false; }
   }
-  const BLOCKED_MSG = "YouTube isn't supported in this store version of the VDM add-on. Paste the link into the VDM app instead.";
+  const BLOCKED_MSG = "YouTube isn't supported in this store version of the UDM add-on. Paste the link into the UDM app instead.";
 
   function siteOf(url) {
     if (isBlocked(url)) return null;
@@ -67,9 +67,9 @@ var VG = (() => {
     return s;
   }
 
-  class Offline extends Error { constructor() { super("VDM app isn't running"); this.offline = true; } }
+  class Offline extends Error { constructor() { super("UDM app isn't running"); this.offline = true; } }
 
-  // Talk to the local VDM app (only background + popup call this; content scripts go via messages)
+  // Talk to the local UDM app (only background + popup call this; content scripts go via messages)
   async function call(path, body, timeoutMs = 120000) {
     if (body && typeof body.url === "string" && isBlocked(body.url)) throw new Error(BLOCKED_MSG);
     const ctrl = new AbortController();
@@ -86,7 +86,7 @@ var VG = (() => {
     } finally { clearTimeout(t); }
     let j = {};
     try { j = await r.json(); } catch (e) {}
-    if (!r.ok) throw new Error(j.error || `VDM error (${r.status})`);
+    if (!r.ok) throw new Error(j.error || `UDM error (${r.status})`);
     return j;
   }
 

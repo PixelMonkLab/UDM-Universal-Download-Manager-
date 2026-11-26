@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "VDM – Video Downloads Manager (Beta)",
-  "short_name": "VDM",
+  "name": "UDM – Universal Download Manager (Beta)",
+  "short_name": "UDM",
   "version": "1.0.0",
   "version_name": "1.0 Beta",
-  "description": "Download button on YouTube, Instagram & Pinterest, plus catches streamed (blob) videos on other sites. Saves through the VDM app on your computer.",
+  "description": "Download button on YouTube, Instagram & Pinterest, plus catches streamed (blob) videos on other sites. Saves through the UDM app on your computer.",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",
@@ -13,7 +13,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "VDM",
+    "default_title": "UDM",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",
@@ -46,7 +46,7 @@
       "suggested_key": {
         "default": "Alt+Shift+V"
       },
-      "description": "Open VDM"
+      "description": "Open UDM"
     },
     "download-current": {
       "suggested_key": {
