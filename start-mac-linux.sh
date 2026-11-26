@@ -1,12 +1,12 @@
 #!/bin/bash
-# VDM launcher for macOS / Linux
+# UDM launcher for macOS / Linux
 cd "$(dirname "$0")" || exit 1
 echo ""
-echo "=== VDM ==="
+echo "=== UDM ==="
 
 # Already running? Just open it.
-if curl -s -m 2 http://127.0.0.1:5757/api/ping 2>/dev/null | grep -q VDM; then
-  echo "VDM is already running."
+if curl -s -m 2 http://127.0.0.1:5757/api/ping 2>/dev/null | grep -q UDM; then
+  echo "UDM is already running."
   open "http://127.0.0.1:5757" 2>/dev/null || xdg-open "http://127.0.0.1:5757" 2>/dev/null
   exit 0
 fi

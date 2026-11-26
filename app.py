@@ -1,5 +1,5 @@
 """
-VDM - download YouTube, Instagram and Pinterest videos (and much more) in one place.
+UDM - download YouTube, Instagram and Pinterest videos (and much more) in one place.
 
 Run:  python app.py      -> opens http://127.0.0.1:5757 in your browser
       python app.py --fix-old   -> convert old downloads so QuickTime / Preview can play them
@@ -30,13 +30,13 @@ except ImportError:
     pass
 
 
-FROZEN = getattr(sys, "frozen", False)          # True when running as VDM.exe
+FROZEN = getattr(sys, "frozen", False)          # True when running as UDM.exe
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-ENGINE_DIR = Path.home() / ".vdm" / "engine"
+ENGINE_DIR = Path.home() / ".udm" / "engine"
 
 
 def use_latest_engine():
-    """VDM.exe only: keep the download engine (yt-dlp + yt-dlp-ejs) up to date.
+    """UDM.exe only: keep the download engine (yt-dlp + yt-dlp-ejs) up to date.
     Sites like YouTube change often, so a frozen copy would soon stop working.
     Checks PyPI at most once a day, verifies each download's SHA-256, and falls back
     to the built-in engine if anything goes wrong."""
@@ -140,20 +140,20 @@ APP_VERSION = "1.0.0-beta"
 VERSION_LABEL = "1.0 Beta"
 PHONE_PORT = 5758  # used only when "Phone access" is switched on
 HERE = BUNDLE
-DATA_DIR = Path.home() / ".vdm"
+DATA_DIR = Path.home() / ".udm"
 SETTINGS_FILE = DATA_DIR / "settings.json"
 HISTORY_FILE = DATA_DIR / "history.json"
-DEFAULT_DIR = Path.home() / "Downloads" / "VDM"
-# VDM used to be called VideoGrab: bring over its settings and download history once
-_OLD = Path.home() / ".videograb"
-if not DATA_DIR.exists() and _OLD.exists():
-    try:
-        DATA_DIR.mkdir(parents=True)
-        for _n in ("settings.json", "history.json"):
-            if (_OLD / _n).exists():
-                shutil.copy2(_OLD / _n, DATA_DIR / _n)
-    except Exception:
-        pass
+DEFAULT_DIR = Path.home() / "Downloads" / "UDM"
+# UDM was earlier called VDM and before that VideoGrab: bring over settings and download history once
+for _OLD in (Path.home() / ".vdm", Path.home() / ".videograb"):
+    if not DATA_DIR.exists() and _OLD.exists():
+        try:
+            DATA_DIR.mkdir(parents=True)
+            for _n in ("settings.json", "history.json"):
+                if (_OLD / _n).exists():
+                    shutil.copy2(_OLD / _n, DATA_DIR / _n)
+        except Exception:
+            pass
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
@@ -195,7 +195,7 @@ def download_dir() -> Path:
 
 
 HISTORY: list[dict] = load_json(HISTORY_FILE, [])
-for _h in HISTORY:   # downloads that were running when VDM was closed can be resumed
+for _h in HISTORY:   # downloads that were running when UDM was closed can be resumed
     if _h.get("status") not in ("done", "error", "cancelled", "paused"):
         _h["status"] = "paused"
 
@@ -696,7 +696,7 @@ def run_file_job(job: dict, data: dict):
     except Exception as e:
         msg = str(e)
         if "403" in msg or "401" in msg:
-            msg += ("\nThe site refused the download. Start it from the browser with the VDM add-on, "
+            msg += ("\nThe site refused the download. Start it from the browser with the UDM add-on, "
                     "so your login is passed along.")
         job.update(status="error", error=msg, resumable=bool(job.get("_part")))
     finally:
@@ -756,8 +756,8 @@ def guard():
             return jsonify(error="Forbidden host"), 403
     else:
         if not host_is_ip(request.host) or not phone_key_ok():
-            return Response("VDM: phone access is off or this link is old. "
-                            "Scan the QR code in VDM on your computer again.", 403, mimetype="text/plain")
+            return Response("UDM: phone access is off or this link is old. "
+                            "Scan the QR code in UDM on your computer again.", 403, mimetype="text/plain")
         if p.startswith(LOCAL_ONLY):
             return jsonify(error="Not allowed from a phone"), 403
         if p == "/":
@@ -864,9 +864,9 @@ def extension_dir(browser: str) -> Path:
     src = HERE / name
     if not FROZEN:
         return src
-    # In VDM.exe the add-on lives inside the app; copy it somewhere permanent and easy to find,
+    # In UDM.exe the add-on lives inside the app; copy it somewhere permanent and easy to find,
     # because the browser keeps loading it from that folder.
-    dst = Path.home() / "VDM Add-on" / ("Firefox" if browser == "firefox" else "Chrome, Edge, Brave, Opera")
+    dst = Path.home() / "UDM Add-on" / ("Firefox" if browser == "firefox" else "Chrome, Edge, Brave, Opera")
     try:
         if not (dst / "manifest.json").exists() or (dst / "manifest.json").read_bytes() != (src / "manifest.json").read_bytes() \
                 or any(not (dst / f.relative_to(src)).exists() for f in src.rglob("*") if f.is_file()):
@@ -880,7 +880,7 @@ def extension_dir(browser: str) -> Path:
 # ---------------- API ----------------
 @app.get("/api/ping")
 def api_ping():
-    return jsonify(app="VDM", version=APP_VERSION, version_label=VERSION_LABEL, folder=str(download_dir()),
+    return jsonify(app="UDM", version=APP_VERSION, version_label=VERSION_LABEL, folder=str(download_dir()),
                    engine=yt_dlp.version.__version__, engine_path=str(Path(yt_dlp.__file__).parent),
                    youtube_js=bool(deno_path()), ffmpeg=bool(ffmpeg_path()), packaged=bool(FROZEN))
 
@@ -923,14 +923,14 @@ def pick_folder_dialog(start: str) -> str | None:
     """Show the computer's own 'choose folder' window. Returns a path, or None if cancelled."""
     if sys.platform == "darwin":
         start_as = start.replace("\\", "\\\\").replace('"', '\\"')
-        script = (f'set p to POSIX path of (choose folder with prompt "Where should VDM save downloads?" '
+        script = (f'set p to POSIX path of (choose folder with prompt "Where should UDM save downloads?" '
                   f'default location (POSIX file "{start_as}"))\nreturn p')
         r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
         return r.stdout.strip() or None if r.returncode == 0 else None
     if os.name == "nt":
         ps = ("Add-Type -AssemblyName System.Windows.Forms;"
               "$f=New-Object System.Windows.Forms.FolderBrowserDialog;"
-              "$f.Description='Where should VDM save downloads?';$f.ShowNewFolderButton=$true;"
+              "$f.Description='Where should UDM save downloads?';$f.ShowNewFolderButton=$true;"
               "$f.SelectedPath='" + start.replace("'", "''") + "';"
               "$o=New-Object System.Windows.Forms.Form -Property @{TopMost=$true};"
               "if($f.ShowDialog($o) -eq 'OK'){[Console]::Out.Write($f.SelectedPath)}")
@@ -1284,7 +1284,7 @@ _LINKS = {"t": 0, "data": None}
 
 def store_links() -> dict:
     """One-click install links (add-on stores). Read from GitHub once a day, so new store
-    approvals reach every VDM without an update. Falls back to the copy that came with VDM."""
+    approvals reach every UDM without an update. Falls back to the copy that came with UDM."""
     if _LINKS["data"] is not None and time.time() - _LINKS["t"] < 86400:
         return _LINKS["data"]
     data = {}
@@ -1401,7 +1401,7 @@ if __name__ == "__main__":
     if get_settings().get("phone_enabled"):
         err = start_phone_server()
         print(f"  Phone access: {'on - ' + phone_info()['url'] if not err else err}", flush=True)
-    print(f"\n  VDM {VERSION_LABEL} (engine {yt_dlp.version.__version__}) is running at {url}\n  Saving to: {download_dir()}\n  Keep this window open. Close it to stop.\n", flush=True)
+    print(f"\n  UDM {VERSION_LABEL} (engine {yt_dlp.version.__version__}) is running at {url}\n  Saving to: {download_dir()}\n  Keep this window open. Close it to stop.\n", flush=True)
     if "--no-browser" not in sys.argv:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
     import logging
@@ -1411,7 +1411,7 @@ if __name__ == "__main__":
     try:
         app.run(host="127.0.0.1", port=APP_PORT, debug=False, threaded=True)
     except OSError as e:
-        print(f"\n  Couldn't start: {e}\n  VDM may already be running - open http://127.0.0.1:{APP_PORT}")
+        print(f"\n  Couldn't start: {e}\n  UDM may already be running - open http://127.0.0.1:{APP_PORT}")
         if FROZEN:
             webbrowser.open(url)
             input("  Press Enter to close...")

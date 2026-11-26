@@ -1,4 +1,4 @@
-/* VDM add-on – panel (works as toolbar popup, docked side panel, and full-page download manager) */
+/* UDM add-on – panel (works as toolbar popup, docked side panel, and full-page download manager) */
 const api = VG.api;
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -252,12 +252,12 @@ async function paintSettings() {
   $("nStart").checked = settings.notify_start; $("nDone").checked = settings.notify_done;
   $("catchDl").checked = settings.catch_downloads; $("catchTypes").value = settings.catch_types;
   if (!canDock) { $("dock").disabled = true; $("dockLbl").textContent = "Side panel isn't supported in this browser"; }
-  if (IS_FIREFOX) $("dockLbl").textContent = "Open in the sidebar (docked) when I click the VDM icon";
+  if (IS_FIREFOX) $("dockLbl").textContent = "Open in the sidebar (docked) when I click the UDM icon";
   try {
     if (api.action.getUserSettings) {
       const us = await api.action.getUserSettings();
       show("pinTip", !us.isOnToolbar); show("pinOk", !!us.isOnToolbar);
-      $("pinOk").textContent = "📌 VDM is pinned to your toolbar.";
+      $("pinOk").textContent = "📌 UDM is pinned to your toolbar.";
     }
   } catch (e) {}
   const ua = navigator.userAgent;

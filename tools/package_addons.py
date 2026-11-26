@@ -3,10 +3,10 @@
     python tools/package_addons.py
 
 Creates:
-  VDM-addon-firefox.zip        -> addons.mozilla.org (sign it, then it installs in one click)
-  VDM-addon-edge.zip           -> Microsoft Edge Add-ons (Partner Center)
-  VDM-addon-chrome-store.zip   -> Chrome Web Store (YouTube removed: the store doesn't allow it)
-  VDM-addon-chrome-manual.zip  -> full version for "Load unpacked" (Chrome, Brave, Opera, Edge)
+  UDM-addon-firefox.zip        -> addons.mozilla.org (sign it, then it installs in one click)
+  UDM-addon-edge.zip           -> Microsoft Edge Add-ons (Partner Center)
+  UDM-addon-chrome-store.zip   -> Chrome Web Store (YouTube removed: the store doesn't allow it)
+  UDM-addon-chrome-manual.zip  -> full version for "Load unpacked" (Chrome, Brave, Opera, Edge)
 """
 import json
 import pathlib
@@ -37,7 +37,7 @@ def make_store_edition(dst: pathlib.Path):
     for cs in m["content_scripts"]:
         cs["matches"] = [x for x in cs["matches"] if "youtube" not in x and "youtu.be" not in x]
     m["description"] = ("Download manager with a Download button on Instagram & Pinterest, catches streamed videos on "
-                        "other sites and speeds up file downloads. Works with the free VDM app on your computer.")
+                        "other sites and speeds up file downloads. Works with the free UDM app on your computer.")
     (dst / "manifest.json").write_text(json.dumps(m, indent=2, ensure_ascii=False), encoding="utf-8")
     c = (dst / "common.js").read_text(encoding="utf-8")
     c = c.replace('const EDITION = "full";', 'const EDITION = "store";')
@@ -66,11 +66,11 @@ def main():
     work.mkdir(parents=True)
     subprocess.run([sys.executable, str(root / "tools" / "build_firefox.py")], check=True)
     print("Packages:")
-    zip_dir(root / "extension-firefox", out / "VDM-addon-firefox.zip")
-    zip_dir(chrome, out / "VDM-addon-edge.zip")
-    zip_dir(chrome, out / "VDM-addon-chrome-manual.zip")
+    zip_dir(root / "extension-firefox", out / "UDM-addon-firefox.zip")
+    zip_dir(chrome, out / "UDM-addon-edge.zip")
+    zip_dir(chrome, out / "UDM-addon-chrome-manual.zip")
     make_store_edition(work / "chrome-store")
-    zip_dir(work / "chrome-store", out / "VDM-addon-chrome-store.zip")
+    zip_dir(work / "chrome-store", out / "UDM-addon-chrome-store.zip")
     shutil.rmtree(work)
 
 

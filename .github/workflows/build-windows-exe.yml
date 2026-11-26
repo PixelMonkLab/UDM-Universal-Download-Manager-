@@ -1,4 +1,4 @@
-# Builds VDM and publishes it.
+# Builds UDM and publishes it.
 #  - Publish a Release on GitHub (Releases > Draft a new release > tag like v1.0.0-beta > Publish):
 #    this workflow then builds everything and attaches the download files + notes to that release.
 #  - "Run workflow" (Actions tab): just builds; downloads appear at the bottom of the run page.
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   windows:
-    name: Windows app (VDM.exe)
+    name: Windows app (UDM.exe)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,28 +26,28 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
-      - name: Build VDM.exe
-        run: pyinstaller --noconfirm --clean VDM.spec
+      - name: Build UDM.exe
+        run: pyinstaller --noconfirm --clean UDM.spec
       - name: Check that the app starts
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "dist\VDM\VDM.exe" -ArgumentList "--no-browser" -PassThru
+          $p = Start-Process -FilePath "dist\UDM\UDM.exe" -ArgumentList "--no-browser" -PassThru
           $ok = $false
           for ($i = 0; $i -lt 40; $i++) {
             Start-Sleep -Seconds 2
             try { $r = Invoke-WebRequest "http://127.0.0.1:5757/api/ping" -UseBasicParsing -TimeoutSec 3; $r.Content; $ok = $true; break } catch {}
           }
           Stop-Process -Id $p.Id -Force
-          if (-not $ok) { throw "VDM.exe did not start" }
-      - name: Make VDM-Windows.zip
+          if (-not $ok) { throw "UDM.exe did not start" }
+      - name: Make UDM-Windows.zip
         shell: pwsh
         run: |
-          Copy-Item "HOW TO USE - Windows.txt" "dist\VDM\"
-          Compress-Archive -Path "dist\VDM" -DestinationPath "VDM-Windows.zip" -Force
+          Copy-Item "HOW TO USE - Windows.txt" "dist\UDM\"
+          Compress-Archive -Path "dist\UDM" -DestinationPath "UDM-Windows.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: VDM-Windows
-          path: VDM-Windows.zip
+          name: UDM-Windows
+          path: UDM-Windows.zip
 
   packages:
     name: Mac/Linux package + add-ons
@@ -59,19 +59,19 @@ jobs:
           python-version: "3.12"
       - name: Add-on packages
         run: python tools/package_addons.py
-      - name: Make VDM-Mac-Linux.zip (keeps the start files double-clickable)
+      - name: Make UDM-Mac-Linux.zip (keeps the start files double-clickable)
         run: |
-          mkdir -p pkg/VDM
+          mkdir -p pkg/UDM
           cp -r app.py downloader.py ui.html manager.html mobile.html requirements.txt icon.ico \
-                "Start VDM.command" start-mac-linux.sh fix-old-videos-mac.sh "HOW TO USE - Mac.txt" README.md PRIVACY.md \
-                extension-chrome extension-firefox store assets pkg/VDM/
-          chmod +x "pkg/VDM/Start VDM.command" pkg/VDM/start-mac-linux.sh pkg/VDM/fix-old-videos-mac.sh
-          (cd pkg && zip -qr ../VDM-Mac-Linux.zip VDM)
+                "Start UDM.command" start-mac-linux.sh fix-old-videos-mac.sh "HOW TO USE - Mac.txt" README.md PRIVACY.md \
+                extension-chrome extension-firefox store assets pkg/UDM/
+          chmod +x "pkg/UDM/Start UDM.command" pkg/UDM/start-mac-linux.sh pkg/UDM/fix-old-videos-mac.sh
+          (cd pkg && zip -qr ../UDM-Mac-Linux.zip UDM)
       - uses: actions/upload-artifact@v4
         with:
-          name: VDM-packages
+          name: UDM-packages
           path: |
-            VDM-Mac-Linux.zip
+            UDM-Mac-Linux.zip
             dist-addons/*.zip
 
   release:
@@ -92,8 +92,8 @@ jobs:
         run: |
           files=$(find out -name '*.zip' | sort)
           echo "$files"
-          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "VDM ${TAG}" > "$notes"
-          title="VDM ${TAG#v}"; title="${title/-beta/ Beta}"
+          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "UDM ${TAG}" > "$notes"
+          title="UDM ${TAG#v}"; title="${title/-beta/ Beta}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" $files --clobber
             gh release edit "$TAG" --title "$title" --notes-file "$notes" --prerelease=false --latest

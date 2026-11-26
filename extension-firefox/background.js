@@ -1,4 +1,4 @@
-/* VDM extension – background (service worker in Chrome/Edge/Brave/Opera, event page in Firefox) */
+/* UDM extension – background (service worker in Chrome/Edge/Brave/Opera, event page in Firefox) */
 if (typeof VG === "undefined" && typeof importScripts === "function") importScripts("common.js");
 
 const api = VG.api;
@@ -62,7 +62,7 @@ async function progress(jobId) {
   } catch (e) {
     if (e.offline) throw e;
     // app restarted and forgot this job
-    const job = await saveJob({ job_id: jobId, status: "error", error: "VDM was restarted during this download. Please try again." });
+    const job = await saveJob({ job_id: jobId, status: "error", error: "UDM was restarted during this download. Please try again." });
     return job;
   }
 }
@@ -128,7 +128,7 @@ async function refreshUnfinished() {
 
 // ---------- find streamed ("blob:") and direct videos on any page ----------
 // Players that show a blob: link really load an HLS (.m3u8) or DASH (.mpd) playlist, or a video file.
-// We watch the page's network requests for those, so VDM can download every piece and join them.
+// We watch the page's network requests for those, so UDM can download every piece and join them.
 const MANIFEST_TYPES = /(mpegurl|dash\+xml)/i;
 const SEGMENT_RE = /\.(ts|m4s|m4a|m4v\?.*range|aac|vtt|webvtt|srt|key|jpg|png|gif|webp)(\?|#|$)/i;
 const SKIP_HOSTS = /(googlevideo\.com|doubleclick\.net|googlesyndication|google-analytics|facebook\.com\/tr)/i;
@@ -248,13 +248,13 @@ api.downloads && api.downloads.onCreated.addListener(async (item) => {
     const ext = (name.match(/\.([a-z0-9]{1,6})$/i) || [])[1];
     const types = (s.catch_types || "").toLowerCase().split(/[\s,]+/).filter(Boolean);
     if (!(types.includes("*") || (ext && types.includes(ext.toLowerCase())) || (!ext && item.fileSize > 20 * 1024 * 1024))) return;
-    if (!(await appIsOnline())) return;                   // VDM not running: leave it to the browser
+    if (!(await appIsOnline())) return;                   // UDM not running: leave it to the browser
     await api.downloads.cancel(item.id).catch(() => {});
     api.downloads.erase({ id: item.id }).catch(() => {});
     handedOver.add(url); setTimeout(() => handedOver.delete(url), 30000);
     await fetchFile(url, { referer: item.referrer || "", filename: "" }, "catch");
   } catch (e) {
-    notifyBasic("vg-err-" + Date.now(), "VDM couldn't take over the download", e.message || String(e));
+    notifyBasic("vg-err-" + Date.now(), "UDM couldn't take over the download", e.message || String(e));
   }
 });
 
@@ -281,7 +281,7 @@ async function handle(msg, sender) {
       return { ok: true };
     }
     case "applyDock":  await applyDock(); return { ok: true };
-    case "testNotify": await notifyBasic("vg-test-" + Date.now(), "🔔 VDM notifications work", "You'll see one when downloads start and finish."); return { ok: true };
+    case "testNotify": await notifyBasic("vg-test-" + Date.now(), "🔔 UDM notifications work", "You'll see one when downloads start and finish."); return { ok: true };
     case "info":       return VG.call("/api/info", { url: VG.cleanUrl(msg.url), cookies: (await VG.getSettings()).cookies });
     case "download":   return startDownload(msg.url, msg.opts || {}, msg.source || "page");
     case "progress":   return progress(msg.job_id);
@@ -328,11 +328,11 @@ function setupMenus() {
   if (!api.contextMenus) return;
   api.contextMenus.removeAll(() => {
     const ctx = ["link", "page", "video", "image"];
-    api.contextMenus.create({ id: "vg-video", title: "Download video with VDM", contexts: ctx });
-    api.contextMenus.create({ id: "vg-audio", title: "Download audio (MP3) with VDM", contexts: ctx });
-    api.contextMenus.create({ id: "vg-open", title: "Open in VDM (choose quality)…", contexts: ctx });
-    api.contextMenus.create({ id: "vg-link", title: "Download link with VDM (fast)", contexts: ["link"] });
-    api.contextMenus.create({ id: "vg-mgr", title: "VDM Download Manager", contexts: ["action"] });
+    api.contextMenus.create({ id: "vg-video", title: "Download video with UDM", contexts: ctx });
+    api.contextMenus.create({ id: "vg-audio", title: "Download audio (MP3) with UDM", contexts: ctx });
+    api.contextMenus.create({ id: "vg-open", title: "Open in UDM (choose quality)…", contexts: ctx });
+    api.contextMenus.create({ id: "vg-link", title: "Download link with UDM (fast)", contexts: ["link"] });
+    api.contextMenus.create({ id: "vg-mgr", title: "UDM Download Manager", contexts: ["action"] });
   });
 }
 api.runtime.onInstalled.addListener(setupMenus);
@@ -343,7 +343,7 @@ api.contextMenus && api.contextMenus.onClicked.addListener(async (info, tab) => 
   if (info.menuItemId === "vg-mgr") { handle({ type: "openManager" }); return; }
   if (info.menuItemId === "vg-link") {
     try { await fetchFile(info.linkUrl, { referer: info.pageUrl || "" }, "menu"); }
-    catch (e) { notifyBasic("vg-err-" + Date.now(), e.offline ? "VDM isn't running" : "VDM", e.offline ? "Start VDM on your computer, then try again." : e.message); }
+    catch (e) { notifyBasic("vg-err-" + Date.now(), e.offline ? "UDM isn't running" : "UDM", e.offline ? "Start UDM on your computer, then try again." : e.message); }
     return;
   }
   let url = info.linkUrl && (VG.siteOf(info.linkUrl) || !VG.siteOf(info.pageUrl || "")) ? info.linkUrl : (info.pageUrl || info.linkUrl);
@@ -370,8 +370,8 @@ api.contextMenus && api.contextMenus.onClicked.addListener(async (info, tab) => 
     if (api.notifications) {
       api.notifications.create("vg-err-" + Date.now(), {
         type: "basic", iconUrl: api.runtime.getURL("icons/128.png"),
-        title: e.offline ? "VDM app isn't running" : "VDM",
-        message: e.offline ? "Start VDM on your computer, then try again." : (e.message || String(e)).slice(0, 180),
+        title: e.offline ? "UDM app isn't running" : "UDM",
+        message: e.offline ? "Start UDM on your computer, then try again." : (e.message || String(e)).slice(0, 180),
       });
     }
   }
@@ -417,7 +417,7 @@ api.action.onClicked && api.action.onClicked.addListener(() => {
   if (api.sidebarAction && api.sidebarAction.toggle) api.sidebarAction.toggle();
 });
 
-// ---------- first install: say hello, show the welcome page, open VDM ----------
+// ---------- first install: say hello, show the welcome page, open UDM ----------
 api.runtime.onInstalled.addListener(async (d) => {
   hello();
   await applyDock();
@@ -438,7 +438,7 @@ api.commands && api.commands.onCommand.addListener(async (cmd) => {
     if (found.length) await downloadMedia(bestMedia(found), {}, "shortcut");
     else await startDownload(tab.url, { title: tab.title }, "shortcut");
   } catch (e) {
-    notifyBasic("vg-err-" + Date.now(), e.offline ? "VDM app isn't running" : "VDM",
-      e.offline ? "Start VDM on your computer, then try again." : e.message);
+    notifyBasic("vg-err-" + Date.now(), e.offline ? "UDM app isn't running" : "UDM",
+      e.offline ? "Start UDM on your computer, then try again." : e.message);
   }
 });
