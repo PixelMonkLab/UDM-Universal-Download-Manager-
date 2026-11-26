@@ -215,13 +215,14 @@ async function refreshJobs() {
   if (!shown.length) { box.append(el("div", "muted", jobs.length ? "No downloads match." : "Nothing yet. Downloads from the app, this add-on and your phone all show up here.")); return; }
   for (const j of shown.slice(0, MODE === "full" ? 200 : 40)) {
     const row = el("div", "job " + j.status);
-    const th = el("img", "th"); th.alt = ""; if (j.thumbnail) th.src = j.thumbnail; else th.style.visibility = "hidden";
-    th.onerror = () => th.style.visibility = "hidden";
+    const th = el("img", "th"); th.alt = "";
+    if (j.thumbnail) { th.src = j.thumbnail; th.onerror = () => th.remove(); }
     const b = el("div", "jb");
     const st = { done: "✓ Done", error: "Failed", cancelled: "Cancelled", cancelling: "Cancelling…", converting: "Converting…",
       paused: "⏸ Paused", pausing: "Pausing…", connecting: "Connecting…",
       processing: "Finishing…", queued: "Waiting…", starting: "Starting…" }[j.status] || (j.indeterminate ? "Downloading…" : Math.round(j.percent) + "%");
-    const top = el("div", "jt"); const nm = el("span", "nm", j.title || j.filename || j.url); nm.title = j.filename || j.url;
+    const label = j.status === "done" ? (j.filename || j.title) : (j.title || j.filename);
+    const top = el("div", "jt"); const nm = el("span", "nm", label || j.url); nm.title = j.filename || j.url;
     top.append(nm, el("span", "muted", st)); b.append(top);
     const bar = el("div", "bar" + ((j.indeterminate && j.status === "downloading") || ["converting", "processing", "starting"].includes(j.status) ? " ind" : ""));
     const f = el("div"); f.style.width = (["done", "error", "cancelled"].includes(j.status) ? 100 : (j.percent || 2)) + "%"; bar.append(f); b.append(bar);
@@ -240,7 +241,7 @@ async function refreshJobs() {
     if (!ACTIVE(j)) btn("Remove", () => act("remove"));
     if (j.status === "error") b.append(el("div", "err", (j.error || "").slice(0, 300)));
     if (j.warning) b.append(el("div", "warn", "⚠ " + j.warning));
-    b.append(acts); row.append(th, b); box.append(row);
+    b.append(acts); if (j.thumbnail) row.append(th); row.append(b); box.append(row);
   }
 }
 

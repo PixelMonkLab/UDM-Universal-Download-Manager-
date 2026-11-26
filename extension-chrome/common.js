@@ -13,8 +13,17 @@ var VG = (() => {
     { name: "Pinterest", host: /^pin\.it$/,                    path: /^\/[^/]+/ },
   ];
   const TEST_SITES = []; // filled only in the automated test build
+  // "store" = Chrome Web Store edition: its rules don't allow downloading from YouTube.
+  const EDITION = "full";
+  const STORE_BLOCKED = /(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com|googlevideo\.com|ytimg\.com)$/i;
+  function isBlocked(url) {
+    if (EDITION !== "store") return false;
+    try { return STORE_BLOCKED.test(new URL(url).hostname); } catch (e) { return false; }
+  }
+  const BLOCKED_MSG = "YouTube isn't supported in this store version of the VDM add-on. Paste the link into the VDM app instead.";
 
   function siteOf(url) {
+    if (isBlocked(url)) return null;
     try {
       const u = new URL(url);
       for (const s of SITES.concat(TEST_SITES)) {
@@ -62,6 +71,7 @@ var VG = (() => {
 
   // Talk to the local VDM app (only background + popup call this; content scripts go via messages)
   async function call(path, body, timeoutMs = 120000) {
+    if (body && typeof body.url === "string" && isBlocked(body.url)) throw new Error(BLOCKED_MSG);
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
     let r;
@@ -89,5 +99,5 @@ var VG = (() => {
     return res;
   }
 
-  return { api, BASE, VERSION_LABEL, SITES, TEST_SITES, siteOf, cleanUrl, DEFAULTS, getSettings, saveSettings, call, send, Offline };
+  return { api, BASE, VERSION_LABEL, EDITION, isBlocked, BLOCKED_MSG, SITES, TEST_SITES, siteOf, cleanUrl, DEFAULTS, getSettings, saveSettings, call, send, Offline };
 })();

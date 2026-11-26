@@ -1,0 +1,6 @@
+{
+  "_help": "When a store approves the add-on, put its link here. VDM's Install button then installs in one click. Leave empty until published.",
+  "firefox": "",
+  "edge": "",
+  "chrome": ""
+}

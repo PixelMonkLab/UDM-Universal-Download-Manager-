@@ -1277,11 +1277,35 @@ def api_extension_hello():
     return jsonify(ok=True, app_version=VERSION_LABEL)
 
 
+REPO = "PixelMonkLab/VDM-Video-Downloads-Manager-"
+STORE_LINKS_URL = f"https://raw.githubusercontent.com/{REPO}/main/store/links.json"
+_LINKS = {"t": 0, "data": None}
+
+
+def store_links() -> dict:
+    """One-click install links (add-on stores). Read from GitHub once a day, so new store
+    approvals reach every VDM without an update. Falls back to the copy that came with VDM."""
+    if _LINKS["data"] is not None and time.time() - _LINKS["t"] < 86400:
+        return _LINKS["data"]
+    data = {}
+    try:
+        import ssl, urllib.request
+        ctx = ssl.create_default_context(cafile=os.environ.get("SSL_CERT_FILE") or None)
+        with urllib.request.urlopen(STORE_LINKS_URL, timeout=4, context=ctx) as r:
+            data = json.load(r)
+    except Exception:
+        data = load_json(HERE / "store" / "links.json", {}) or load_json(Path(__file__).resolve().parent / "store" / "links.json", {})
+    clean = {k: v for k, v in data.items() if k in ("firefox", "edge", "chrome") and isinstance(v, str)
+             and v.startswith("https://")}
+    _LINKS.update(t=time.time(), data=clean)
+    return clean
+
+
 @app.get("/api/extension")
 def api_extension():
     seen = dict(EXT_SEEN, recent=bool(EXT_SEEN) and time.time() - EXT_SEEN.get("ts", 0) < 600) if EXT_SEEN else None
     return jsonify(chrome=str(extension_dir("chrome")), firefox=str(extension_dir("firefox")),
-                   version=VERSION_LABEL, seen=seen)
+                   version=VERSION_LABEL, seen=seen, store=store_links())
 
 
 @app.get("/favicon.png")

@@ -1,14 +1,18 @@
-# Builds VDM.exe on GitHub's Windows computers.
-# Upload this folder to a GitHub repository, open the "Actions" tab,
-# choose "Build Windows app" -> "Run workflow". When it finishes, download
-# "VDM-Windows" from the bottom of the run page.
+# Builds VDM and publishes it.
+#  - "Run workflow" (Actions tab): builds everything; downloads appear at the bottom of the run page.
+#  - Pushing a version tag like v1.0.1-beta: also creates a public Release with download buttons.
 name: Build Windows app
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+
+permissions:
+  contents: write
+
 jobs:
-  build:
+  windows:
+    name: Windows app (VDM.exe)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +36,59 @@ jobs:
           }
           Stop-Process -Id $p.Id -Force
           if (-not $ok) { throw "VDM.exe did not start" }
+      - name: Make VDM-Windows.zip
+        shell: pwsh
+        run: |
+          Copy-Item "HOW TO USE - Windows.txt" "dist\VDM\"
+          Compress-Archive -Path "dist\VDM" -DestinationPath "VDM-Windows.zip" -Force
       - uses: actions/upload-artifact@v4
         with:
           name: VDM-Windows
-          path: dist/VDM
+          path: VDM-Windows.zip
+
+  packages:
+    name: Mac/Linux package + add-ons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Add-on packages
+        run: python tools/package_addons.py
+      - name: Make VDM-Mac-Linux.zip (keeps the start files double-clickable)
+        run: |
+          mkdir -p pkg/VDM
+          cp -r app.py downloader.py ui.html manager.html mobile.html requirements.txt icon.ico \
+                "Start VDM.command" start-mac-linux.sh fix-old-videos-mac.sh "HOW TO USE - Mac.txt" README.md PRIVACY.md \
+                extension-chrome extension-firefox store assets pkg/VDM/
+          chmod +x "pkg/VDM/Start VDM.command" pkg/VDM/start-mac-linux.sh pkg/VDM/fix-old-videos-mac.sh
+          (cd pkg && zip -qr ../VDM-Mac-Linux.zip VDM)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VDM-packages
+          path: |
+            VDM-Mac-Linux.zip
+            dist-addons/*.zip
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, packages]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la out out/* || true
+          files=$(find out -name '*.zip' | sort)
+          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "VDM ${GITHUB_REF_NAME}" > "$notes"
+          # not marked "pre-release": GitHub's /releases/latest download links skip pre-releases
+          title="VDM ${GITHUB_REF_NAME#v}"; title="${title/-beta/ Beta}"
+          gh release create "$GITHUB_REF_NAME" $files --title "$title" --notes-file "$notes" --latest

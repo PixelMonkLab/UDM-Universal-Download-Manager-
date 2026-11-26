@@ -2,7 +2,7 @@
 # Windows: just double-click build-windows-exe.bat. Manually: pyinstaller --noconfirm --clean VDM.spec
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
-datas = [("ui.html", "."), ("mobile.html", "."), ("manager.html", "."),
+datas = [("ui.html", "."), ("mobile.html", "."), ("manager.html", "."), ("store/links.json", "store"),
          ("extension-chrome", "extension-chrome"), ("extension-firefox", "extension-firefox")]
 binaries = []
 hiddenimports = collect_submodules("yt_dlp") + collect_submodules("qrcode")
