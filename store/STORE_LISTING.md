@@ -4,7 +4,7 @@ Everything needed to publish the add-on. Packages come from `python tools/packag
 or from the **Release** page on GitHub. Images are in `store/`.
 
 Privacy policy URL (all stores ask for it):
-`https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/blob/main/PRIVACY.md`
+`https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/blob/main/PRIVACY.md`
 
 ---
 
@@ -48,7 +48,7 @@ UDM is a download manager for your browser and computer.
 • Docks in the side panel, so your downloads are always in view
 • Keyboard shortcuts: Alt+Shift+V opens UDM, Alt+Shift+D downloads the video on the page
 
-The add-on works together with the free UDM app on your computer, which does the downloading. Download it from https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest
+The add-on works together with the free UDM app on your computer, which does the downloading. Download it from https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest
 
 Privacy: UDM collects nothing. The add-on only talks to the UDM app on your own computer.
 Only download content you own or have permission to save.

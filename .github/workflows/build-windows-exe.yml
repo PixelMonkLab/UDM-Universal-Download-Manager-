@@ -7,8 +7,11 @@ on:
   workflow_dispatch:
   release:
     types: [published]
-  push:
-    tags: ["v*"]
+
+# never let two builds upload to the same release at once
+concurrency:
+  group: build-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -76,7 +79,7 @@ jobs:
 
   release:
     name: Publish release
-    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release'
     needs: [windows, packages]
     runs-on: ubuntu-latest
     steps:
@@ -94,9 +97,9 @@ jobs:
           echo "$files"
           notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "UDM ${TAG}" > "$notes"
           title="UDM ${TAG#v}"; title="${title/-beta/ Beta}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" $files --clobber
-            gh release edit "$TAG" --title "$title" --notes-file "$notes" --prerelease=false --latest
-          else
-            gh release create "$TAG" $files --title "$title" --notes-file "$notes" --latest
-          fi
+          # upload one file at a time and retry, so a hiccup never leaves the release half-filled
+          for f in $files; do
+            for try in 1 2 3; do gh release upload "$TAG" "$f" --clobber && break; sleep 5; done
+          done
+          gh release edit "$TAG" --title "$title" --notes-file "$notes" --prerelease=false --latest
+          echo "Attached:"; gh release view "$TAG" --json assets --jq '.assets[].name'

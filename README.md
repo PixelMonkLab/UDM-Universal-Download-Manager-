@@ -6,16 +6,16 @@
 ## ⬇ Download UDM
 
 <p align="center">
-  <a href="https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest/download/UDM-Windows.zip"><img src="https://img.shields.io/badge/Download%20for-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="44"></a>
+  <a href="https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest/download/UDM-Windows.zip"><img src="https://img.shields.io/badge/Download%20for-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="44"></a>
   &nbsp;
-  <a href="https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest/download/UDM-Mac-Linux.zip"><img src="https://img.shields.io/badge/Download%20for-Mac%20%2F%20Linux-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download for Mac / Linux" height="44"></a>
+  <a href="https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest/download/UDM-Mac-Linux.zip"><img src="https://img.shields.io/badge/Download%20for-Mac%20%2F%20Linux-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download for Mac / Linux" height="44"></a>
 </p>
 <p align="center">
-  <a href="https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest/download/UDM-addon-chrome-manual.zip"><img src="https://img.shields.io/badge/Browser%20add--on-Chrome%20·%20Edge%20·%20Brave-1A8CFF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Add-on for Chrome, Edge, Brave" height="36"></a>
+  <a href="https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest/download/UDM-addon-chrome-manual.zip"><img src="https://img.shields.io/badge/Browser%20add--on-Chrome%20·%20Edge%20·%20Brave-1A8CFF?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Add-on for Chrome, Edge, Brave" height="36"></a>
   &nbsp;
-  <a href="https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest/download/UDM-addon-firefox.zip"><img src="https://img.shields.io/badge/Browser%20add--on-Firefox-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white" alt="Add-on for Firefox" height="36"></a>
+  <a href="https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest/download/UDM-addon-firefox.zip"><img src="https://img.shields.io/badge/Browser%20add--on-Firefox-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white" alt="Add-on for Firefox" height="36"></a>
 </p>
-<p align="center"><a href="https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/releases/latest">All downloads and release notes →</a></p>
+<p align="center"><a href="https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/releases/latest">All downloads and release notes →</a></p>
 
 | Step | Windows | Mac |
 |---|---|---|
