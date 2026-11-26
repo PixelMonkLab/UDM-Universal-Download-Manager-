@@ -21,7 +21,7 @@ function summarize(p) {
   return {
     status: p.status, percent: p.percent || 0, speed: p.speed || "", eta: p.eta || "",
     filename: p.filename || null, error: p.error || null,
-    title: p.title || undefined,
+    ...(p.title ? { title: p.title } : {}),            // never wipe a known name with an empty one
   };
 }
 
@@ -98,6 +98,14 @@ async function maybeNotify(job) {
     return;
   }
   if (job.notified || (job.status !== "done" && job.status !== "error")) return;
+  if (job.status === "error" && job.fallback && !job.notified) {
+    await saveJob({ job_id: job.job_id, notified: true });
+    try { api.notifications && api.notifications.clear("vg-start-" + job.job_id); } catch (e) {}
+    giveBackToBrowser(job.url, job.title, job.error);
+    VG.call("/api/delete/" + encodeURIComponent(job.job_id), {}, 5000).catch(() => {});
+    updateBadge();
+    return;
+  }
   await saveJob({ job_id: job.job_id, notified: true });
   updateBadge();
   if (!(await VG.getSettings()).notify_done) return;
@@ -222,7 +230,8 @@ async function fetchFile(url, opts = {}, source = "extension") {
   };
   const r = await VG.call("/api/fetch", body, 15000);
   const job = { job_id: r.job_id, url, site: hostOf(url), title: opts.filename || url.split("?")[0].split("/").pop(),
-                mode: "file", source, status: "starting", percent: 0, ts: Date.now(), notified: false };
+                mode: "file", source, status: "starting", percent: 0, ts: Date.now(), notified: false,
+                fallback: !!opts.fallback };
   await saveJob(job);
   watch(job.job_id);
   if (s.notify_start) notifyBasic("vg-start-" + job.job_id, "⬇️ Download started", job.title || url);
@@ -232,31 +241,85 @@ async function fetchFile(url, opts = {}, source = "extension") {
 
 let appOnline = false, appCheckedAt = 0;
 async function appIsOnline() {
-  if (Date.now() - appCheckedAt < 15000) return appOnline;
+  // remember "running" for 15 s, but re-check quickly when it wasn't running
+  if (Date.now() - appCheckedAt < (appOnline ? 15000 : 3000)) return appOnline;
   try { await VG.call("/api/ping", undefined, 1500); appOnline = true; } catch (e) { appOnline = false; }
   appCheckedAt = Date.now();
   return appOnline;
 }
-const handedOver = new Set();
-api.downloads && api.downloads.onCreated.addListener(async (item) => {
+
+// ---------- take over browser downloads, like IDM ----------
+const handedOver = new Set();          // links we gave back to the browser (don't take them again)
+const SKIP_DEFAULT = "jpg jpeg png gif webp svg ico bmp avif heic html htm mhtml php asp aspx json xml css js txt";
+
+async function logTakeover(entry) {
   try {
-    const s = await VG.getSettings();
-    const url = item.finalUrl || item.url || "";
-    if (!s.catch_downloads || !/^https?:/i.test(url) || handedOver.has(url) || VG.isBlocked(url) || VG.isBlocked(item.referrer || "")) return;
-    if (item.byExtensionId && item.byExtensionId === api.runtime.id) return;
-    const name = (item.filename || "").split(/[\\/]/).pop() || decodeURIComponent(url.split("?")[0].split("/").pop() || "");
-    const ext = (name.match(/\.([a-z0-9]{1,6})$/i) || [])[1];
+    const r = await api.storage.local.get("takeover_log");
+    const list = [Object.assign({ ts: Date.now() }, entry)].concat(r.takeover_log || []).slice(0, 8);
+    await api.storage.local.set({ takeover_log: list });
+  } catch (e) {}
+}
+
+function decide(s, name, mime, url) {
+  if (!s.catch_downloads) return "switched off in Settings";
+  if (!/^https?:/i.test(url)) return url.startsWith("blob:") || url.startsWith("data:")
+    ? "made by the web page itself (blob) – only the browser can save it" : "not a web link";
+  if (VG.isBlocked(url)) return "not supported in this edition";
+  const ext = ((name || "").match(/\.([a-z0-9]{1,8})$/i) || [])[1];
+  const e = (ext || "").toLowerCase();
+  if ((s.catch_mode || "all") === "types") {
     const types = (s.catch_types || "").toLowerCase().split(/[\s,]+/).filter(Boolean);
-    if (!(types.includes("*") || (ext && types.includes(ext.toLowerCase())) || (!ext && item.fileSize > 20 * 1024 * 1024))) return;
-    if (!(await appIsOnline())) return;                   // UDM not running: leave it to the browser
-    await api.downloads.cancel(item.id).catch(() => {});
-    api.downloads.erase({ id: item.id }).catch(() => {});
-    handedOver.add(url); setTimeout(() => handedOver.delete(url), 30000);
-    await fetchFile(url, { referer: item.referrer || "", filename: "" }, "catch");
-  } catch (e) {
-    notifyBasic("vg-err-" + Date.now(), "UDM couldn't take over the download", e.message || String(e));
+    return (types.includes("*") || (e && types.includes(e))) ? null : `.${e || "?"} isn't in your list of file types`;
   }
-});
+  const skip = (s.catch_skip ?? SKIP_DEFAULT).toLowerCase().split(/[\s,]+/).filter(Boolean);
+  if (e && skip.includes(e)) return `.${e} files are left to the browser (images/web pages)`;
+  if (!e && /^(image\/|text\/html)/.test(mime || "")) return "image or web page";
+  return null;   // take it
+}
+
+async function handleBrowserDownload(item, name) {
+  const url = item.finalUrl || item.url || "";
+  if (handedOver.has(url) || (item.byExtensionId && item.byExtensionId === api.runtime.id)) return false;
+  const s = await VG.getSettings();
+  const why = decide(s, name, item.mime, url);
+  if (why) { if (s.catch_downloads) logTakeover({ name: name || url, taken: false, why }); return false; }
+  if (!(await appIsOnline())) {
+    logTakeover({ name, taken: false, why: "the UDM app isn't running" });
+    return false;
+  }
+  try { await api.downloads.cancel(item.id); } catch (e) {}
+  api.downloads.erase({ id: item.id }).catch(() => {});
+  try {
+    await fetchFile(url, { referer: item.referrer || "", filename: name || "", fallback: true }, "catch");
+    logTakeover({ name, taken: true });
+  } catch (e) {
+    giveBackToBrowser(url, name, e.message);
+  }
+  return true;
+}
+
+function giveBackToBrowser(url, name, reason) {
+  handedOver.add(url);
+  setTimeout(() => handedOver.delete(url), 120000);
+  api.downloads.download({ url, conflictAction: "uniquify" }).catch(() => {});
+  logTakeover({ name: name || url, taken: false, why: "UDM couldn't download it, so the browser did: " + (reason || "").split("\n")[0] });
+  notifyBasic("vg-back-" + Date.now(), "Downloading in the browser instead", (name || url) + " – UDM couldn't get this one, so your browser is downloading it.");
+}
+
+if (api.downloads && api.downloads.onDeterminingFilename) {
+  // Chrome, Edge, Brave, Opera: decide once the browser knows the real file name (even for links like /download?id=1)
+  api.downloads.onDeterminingFilename.addListener((item, suggest) => {
+    const name = (item.filename || "").split(/[\\/]/).pop();
+    handleBrowserDownload(item, name).catch(() => {}).finally(() => { try { suggest(); } catch (e) {} });
+    return true;   // we answer asynchronously
+  });
+} else if (api.downloads) {
+  // Firefox: the file name is already known when the download starts
+  api.downloads.onCreated.addListener((item) => {
+    const name = (item.filename || "").split(/[\\/]/).pop() || decodeURIComponent((item.url || "").split("?")[0].split("/").pop() || "");
+    handleBrowserDownload(item, name).catch(() => {});
+  });
+}
 
 // ---------- messages from content scripts and popup ----------
 async function handle(msg, sender) {
@@ -280,6 +343,7 @@ async function handle(msg, sender) {
         ? VG.BASE + "/manager" : api.runtime.getURL("popup.html?full=1") });
       return { ok: true };
     }
+    case "takeoverLog": { const r = await api.storage.local.get("takeover_log"); return { log: r.takeover_log || [], online: await appIsOnline() }; }
     case "applyDock":  await applyDock(); return { ok: true };
     case "testNotify": await notifyBasic("vg-test-" + Date.now(), "🔔 UDM notifications work", "You'll see one when downloads start and finish."); return { ok: true };
     case "info":       return VG.call("/api/info", { url: VG.cleanUrl(msg.url), cookies: (await VG.getSettings()).cookies });

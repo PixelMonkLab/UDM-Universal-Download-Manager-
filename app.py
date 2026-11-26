@@ -136,8 +136,8 @@ import downloader as dl
 yt_dlp, download_range_func, DownloadCancelled = import_engine()
 
 APP_PORT = 5757  # fixed port the browser extension talks to (5000 clashes with macOS AirPlay)
-APP_VERSION = "1.0.0-beta"
-VERSION_LABEL = "1.0 Beta"
+APP_VERSION = "1.0.1-beta"
+VERSION_LABEL = "1.0.1 Beta"
 PHONE_PORT = 5758  # used only when "Phone access" is switched on
 HERE = BUNDLE
 DATA_DIR = Path.home() / ".udm"
@@ -1353,6 +1353,15 @@ def api_phone_set():
     else:
         stop_phone_server()
     return jsonify(phone_info())
+
+
+@app.get("/api/test-download")
+def api_test_download():
+    """A harmless 8 MB test file, so you can check that browser downloads are taken over by UDM."""
+    f = DATA_DIR / "UDM-test-file.bin"
+    if not f.exists() or f.stat().st_size != 8 * 1024 * 1024:
+        f.write_bytes(os.urandom(8 * 1024 * 1024))
+    return send_file(f, as_attachment=True, download_name="UDM-test-file.bin", conditional=True)
 
 
 @app.get("/manager")

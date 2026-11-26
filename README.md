@@ -1,6 +1,6 @@
 <p align="center"><img src="store/marquee-1400x560.png" alt="UDM – Universal Download Manager" width="620"></p>
 
-<h3 align="center">Universal <b>Download</b> Manager · v1.0 Beta</h3>
+<h3 align="center">Universal <b>Download</b> Manager · v1.0.1 Beta</h3>
 <p align="center">Download videos from YouTube, Instagram, Pinterest and any site, plus an IDM-style download manager for every file.</p>
 
 ## ⬇ Download UDM

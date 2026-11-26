@@ -1,6 +1,6 @@
 # UDM – Privacy Policy
 
-_Last updated: 26 November 2026 · applies to the UDM app and the UDM browser add-on (v1.0 Beta)_
+_Last updated: 26 November 2026 · applies to the UDM app and the UDM browser add-on (v1.0.1 Beta)_
 
 **Short version: UDM doesn't collect, sell or send your data anywhere. Everything stays on your own computer.**
 

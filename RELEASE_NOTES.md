@@ -1,4 +1,10 @@
-## UDM – Universal **Download** Manager · v1.0 Beta
+## UDM – Universal **Download** Manager · v1.0.1 Beta
+
+### 🆕 What's new in 1.0.1
+- **Browser downloads now really go to UDM, like IDM:** everything except images and web pages is taken over, including links without a file name (like `…/download?id=123`).
+- **Nothing gets lost:** if a site won't let UDM download a file, it goes straight back to the browser, with a message.
+- **Settings → "Test it" button and a "Recent" list** that shows what UDM took over, and why anything was left to the browser.
+- **To update:** download the new files below, replace the old UDM folder, and in your browser's extensions page click **↻ Reload** on UDM (or remove it and load the new folder).
 
 ### ⬇ Which file do I need?
 | You have | Download | Then |

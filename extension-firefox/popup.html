@@ -3,7 +3,7 @@
 <title>UDM</title><link rel="stylesheet" href="popup.css"></head>
 <body>
   <header>
-    <img src="icons/48.png" alt=""><b>U<span>DM</span></b><span class="ver" id="ver">v1.0 Beta</span>
+    <img src="icons/48.png" alt=""><b>U<span>DM</span></b><span class="ver" id="ver">v1.0.1 Beta</span>
     <span id="status" class="status">checking…</span>
     <span class="hbtns">
       <button id="dockBtn" class="icon" title="Dock in the side panel">⧉</button>
@@ -88,9 +88,14 @@
       <button id="nTest" class="link" style="margin-top:6px">Send a test notification</button>
     </div>
     <div class="card">
-      <b>Browser downloads (like IDM)</b>
-      <label class="chk"><input type="checkbox" id="catchDl"> Hand my browser downloads to UDM (faster, with pause &amp; resume)</label>
-      <label style="margin-top:8px">File types to take over (* = everything)<input id="catchTypes"></label>
+      <b>Browser downloads → UDM (like IDM)</b>
+      <label class="chk"><input type="checkbox" id="catchDl"> Download files with UDM instead of the browser</label>
+      <label style="margin-top:8px">Which downloads
+        <select id="catchMode"><option value="all">Everything (except images &amp; web pages)</option><option value="types">Only these file types…</option></select></label>
+      <label id="typesWrap" class="hidden" style="margin-top:8px">File types (* = everything)<input id="catchTypes"></label>
+      <p class="muted" id="catchStatus" style="margin-top:8px">–</p>
+      <div class="row"><button id="catchTest" class="ghost">▶ Test it</button></div>
+      <div id="catchLog" class="muted" style="margin-top:8px"></div>
       <p class="muted">Only while the UDM app is running; otherwise the browser downloads as normal. Right-click any link → <b>Download link with UDM</b> works too.</p>
     </div>
     <div class="card">
@@ -107,7 +112,7 @@
       <p class="muted" id="appInfo">–</p>
       <div class="row"><button id="folder" class="ghost">📂 Downloads folder</button><button id="app" class="ghost">Open app</button></div>
       <div class="row"><button id="phone" class="ghost">📱 Use on phone</button></div>
-      <p class="muted" style="margin-top:8px">UDM <span id="ver2">1.0 Beta</span> · Only download content you own or have permission to save.</p>
+      <p class="muted" style="margin-top:8px">UDM <span id="ver2">1.0.1 Beta</span> · Only download content you own or have permission to save.</p>
     </div>
   </section>
 

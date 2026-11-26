@@ -251,6 +251,7 @@ async function paintSettings() {
   $("btn").checked = settings.show_button;
   $("nStart").checked = settings.notify_start; $("nDone").checked = settings.notify_done;
   $("catchDl").checked = settings.catch_downloads; $("catchTypes").value = settings.catch_types;
+  $("catchMode").value = settings.catch_mode || "all"; paintCatch();
   if (!canDock) { $("dock").disabled = true; $("dockLbl").textContent = "Side panel isn't supported in this browser"; }
   if (IS_FIREFOX) $("dockLbl").textContent = "Open in the sidebar (docked) when I click the UDM icon";
   try {
@@ -270,8 +271,22 @@ $("dock").onchange = async () => { await save({ dock: $("dock").checked }); VG.s
 $("btn").onchange = () => save({ show_button: $("btn").checked });
 $("nStart").onchange = () => save({ notify_start: $("nStart").checked });
 $("nDone").onchange = () => save({ notify_done: $("nDone").checked });
-$("catchDl").onchange = () => save({ catch_downloads: $("catchDl").checked });
+$("catchDl").onchange = async () => { await save({ catch_downloads: $("catchDl").checked }); paintCatch(); };
+$("catchMode").onchange = async () => { await save({ catch_mode: $("catchMode").value }); paintCatch(); };
 $("catchTypes").onchange = () => save({ catch_types: $("catchTypes").value.trim() });
+$("catchTest").onclick = () => api.tabs.create({ url: VG.BASE + "/api/test-download", active: false });
+async function paintCatch() {
+  show("typesWrap", settings.catch_mode === "types");
+  let r = { log: [], online: false };
+  try { r = await VG.send({ type: "takeoverLog" }); } catch (e) {}
+  $("catchStatus").textContent = !settings.catch_downloads ? "⏸ Off – the browser downloads files itself."
+    : r.online ? "✅ On – new browser downloads go to UDM." : "⚠️ On, but the UDM app isn't running, so the browser downloads files itself.";
+  const box = $("catchLog"); box.textContent = "";
+  if (r.log.length) box.append(el("div", "", "Recent:"));
+  for (const x of r.log.slice(0, 5)) {
+    box.append(el("div", "", (x.taken ? "✓ UDM: " : "↩ Browser: ") + (x.name || "") + (x.why ? " – " + x.why : "")));
+  }
+}
 $("nTest").onclick = () => VG.send({ type: "testNotify" }).catch(e => alert(e.message));
 $("scCopy").onclick = () => navigator.clipboard.writeText($("scPage").textContent).catch(() => {});
 $("folder").onclick = () => VG.send({ type: "reveal" }).catch(() => {});

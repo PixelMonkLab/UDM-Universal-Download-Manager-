@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "UDM – Universal Download Manager (Beta)",
   "short_name": "UDM",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Download button on YouTube, Instagram & Pinterest, plus catches streamed (blob) videos on other sites. Saves through the UDM app on your computer.",
   "icons": {
     "16": "icons/16.png",

@@ -2,7 +2,7 @@
 var VG = (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   const BASE = "http://127.0.0.1:5757";
-  const VERSION_LABEL = "1.0 Beta";
+  const VERSION_LABEL = "1.0.1 Beta";
 
   // Pages that get the on-page Download button
   const SITES = [
@@ -54,7 +54,7 @@ var VG = (() => {
     mode: "video", quality: "best", audio_format: "mp3",
     mac_compat: true, cookies: "none", all_items: false, show_button: true,
     dock: true, notify_start: true, notify_done: true,
-    catch_downloads: true,
+    catch_downloads: true, catch_mode: "all",
     catch_types: "zip rar 7z tar gz tgz bz2 xz iso dmg pkg exe msi apk deb rpm appimage mp4 mkv avi mov webm mp3 flac wav m4a pdf epub docx xlsx pptx",
   };
   async function getSettings() {

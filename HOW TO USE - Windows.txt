@@ -1,5 +1,5 @@
 ==============================================================
-  UDM - Universal DOWNLOAD Manager   v1.0 Beta
+  UDM - Universal DOWNLOAD Manager   v1.0.1 Beta
   HOW TO USE (WINDOWS)
 ==============================================================
 
