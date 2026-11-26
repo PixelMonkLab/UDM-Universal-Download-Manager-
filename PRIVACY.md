@@ -25,4 +25,4 @@ The UDM add-on only talks to the **UDM app running on your own computer** (addre
 If you switch on "Use on phone", phones on your Wi-Fi that have the secret QR link can use UDM on your computer. It's off by default, and you can switch it off or make a new secret link at any time.
 
 ## Contact
-Questions: open an issue at https://github.com/PixelMonkLab/VDM-Video-Downloads-Manager-/issues
+Questions: open an issue at https://github.com/PixelMonkLab/UDM-Universal-Download-Manager-/issues

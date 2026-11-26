@@ -1277,7 +1277,7 @@ def api_extension_hello():
     return jsonify(ok=True, app_version=VERSION_LABEL)
 
 
-REPO = "PixelMonkLab/VDM-Video-Downloads-Manager-"
+REPO = "PixelMonkLab/UDM-Universal-Download-Manager-"
 STORE_LINKS_URL = f"https://raw.githubusercontent.com/{REPO}/main/store/links.json"
 _LINKS = {"t": 0, "data": None}
 
