@@ -1099,7 +1099,7 @@ class MainWindow(QMainWindow):
             a = QAction(emoji_icon(icon, 30), text, self)
             a.triggered.connect(fn)
             if key:
-                a.setShortcut(QKeySequence(key))
+                a.setShortcuts([QKeySequence(k) for k in (key if isinstance(key, (list, tuple)) else [key])])
             if tip:
                 a.setToolTip(tip)
             return a
@@ -1109,7 +1109,7 @@ class MainWindow(QMainWindow):
         self.a_resume = act("Resume", "▶️", lambda: self.do("resume"))
         self.a_stop = act("Stop", "⏸️", lambda: self.do("stop"))
         self.a_stopall = act("Stop all", "⏹️", self.stop_all)
-        self.a_delete = act("Delete", "🗑️", lambda: self.do("delete"), "Delete")
+        self.a_delete = act("Delete", "🗑️", lambda: self.do("delete"), ["Delete", "Backspace"] if IS_MAC else "Delete")
         self.a_deldone = act("Delete completed", "🧹", self.delete_completed)
         self.a_startq = act("Start queue", "⏯️", lambda: API.post("/api/resume-all"))
         self.a_folder = act("Open folder", "📂", lambda: API.post("/api/open-folder"))
@@ -1559,8 +1559,9 @@ def set_start_at_login(on: bool):
         raise RuntimeError("Start at login works in the installed UDM app.")
     if IS_WIN:
         import winreg
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0,
-                             winreg.KEY_SET_VALUE)
+        # CreateKeyEx also opens it; the Run key doesn't exist yet on some (new) Windows accounts
+        key = winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0,
+                                 winreg.KEY_SET_VALUE)
         if on:
             winreg.SetValueEx(key, "UDM", 0, winreg.REG_SZ, f'"{exe}" --minimized')
         else:
@@ -1571,6 +1572,9 @@ def set_start_at_login(on: bool):
         winreg.CloseKey(key)
     elif IS_MAC:
         plist = Path.home() / "Library" / "LaunchAgents" / "com.pixelmonklab.udm.plist"
+        if on and "/AppTranslocation/" in exe:
+            raise RuntimeError("first move UDM into your Applications folder (drag it there in Finder), "
+                               "then open it from there and try again.")
         if on:
             plist.parent.mkdir(parents=True, exist_ok=True)
             plist.write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
