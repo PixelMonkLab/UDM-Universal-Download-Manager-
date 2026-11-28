@@ -1333,7 +1333,7 @@ def api_quit():
     """Quit the desktop app (downloads pause and continue next time). Used by installers / updates."""
     if not DESKTOP["quit"]:
         return jsonify(error="Only the UDM desktop app can be quit this way"), 400
-    DESKTOP["quit"]()
+    threading.Timer(0.3, DESKTOP["quit"]).start()      # answer first, then quit
     return jsonify(ok=True)
 
 

@@ -1652,12 +1652,20 @@ def main(qapp: QApplication | None = None, splash=None):
     BRIDGE = Bridge()
     BRIDGE.call.connect(lambda fn: fn())
 
-    start_server()
     win = MainWindow(QSystemTrayIcon.isSystemTrayAvailable())
     TRAY = win.tray = make_tray(win)
     core.DESKTOP.update(active=True, tray=TRAY is not None, notify=notify, set_login=set_start_at_login,
                         show=lambda payload=None: on_ui(lambda: win.bring_to_front(payload)),
                         quit=lambda: on_ui(win.quit_app))
+    try:
+        start_server()        # for the browser add-on and the phone (after the hooks above are ready)
+    except (OSError, SystemExit) as e:          # werkzeug exits when the port is taken
+        log("server failed:", repr(e))
+        if splash is not None:
+            splash.close()
+        message(None, "UDM", f"UDM can't start: another program is using port {core.APP_PORT} on this computer.\n\n"
+                "If an older UDM is open (a black window or Terminal), close it and open UDM again.", "error")
+        return 1
     if IS_MAC:   # clicking UDM in the Dock brings the hidden window back
         qapp.applicationStateChanged.connect(
             lambda st: win.bring_to_front() if st == Qt.ApplicationState.ApplicationActive and not win.isVisible()

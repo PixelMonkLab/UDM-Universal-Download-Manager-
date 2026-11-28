@@ -30,6 +30,15 @@ def _show_running_copy() -> None:
         pass
 
 
+def _is_desktop_app() -> bool:
+    try:
+        import json
+        with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/desktop", timeout=2) as r:
+            return bool(json.load(r).get("desktop"))
+    except Exception:
+        return False        # older UDM versions don't know /api/desktop: they are the browser version
+
+
 def _bundle_dir() -> str:
     return getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
 
@@ -37,17 +46,22 @@ def _bundle_dir() -> str:
 def run() -> int:
     args = sys.argv[1:]
     selftest = "--selftest" in args
-    if not selftest and _already_running():
+    running = not selftest and _already_running()
+    if running and _is_desktop_app():
         _show_running_copy()          # UDM is already open: just bring its window to the front
         return 0
 
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
-    from PySide6.QtWidgets import QApplication, QSplashScreen
+    from PySide6.QtWidgets import QApplication, QMessageBox, QSplashScreen
 
     QApplication.setApplicationName("UDM")
     QApplication.setOrganizationName("PixelMonkLab")
     qapp = QApplication(sys.argv)
+    if running:                       # the older browser version of UDM is still open
+        QMessageBox.information(None, "UDM", "An older UDM (the browser version) is still running.\n\n"
+                                "Close its black window (Windows) or Terminal window (Mac), then open UDM again.")
+        return 1
 
     splash = None
     if "--minimized" not in args:

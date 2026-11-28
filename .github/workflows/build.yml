@@ -44,6 +44,8 @@ jobs:
           $r = Get-Content $out -Raw | ConvertFrom-Json
           $r | Format-List
           if (-not $r.server -or -not $r.compiled -or -not $r.ffmpeg) { throw "UDM.exe self-test failed" }
+      - name: End-to-end test (download, pause/resume, quit and continue)
+        run: python tools/ci_smoke.py dist\UDM\UDM.exe
       - uses: actions/upload-artifact@v4
         with:
           name: screenshot-windows
@@ -89,6 +91,8 @@ jobs:
           [ -f "$out" ] || { cat ~/.udm/udm-desktop.log 2>/dev/null; echo "UDM.app did not start"; exit 1; }
           cat "$out"
           python -c "import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if r.get('server') and r.get('compiled') and r.get('ffmpeg') else 1)" "$out"
+      - name: End-to-end test (download, pause/resume, quit and continue)
+        run: python tools/ci_smoke.py dist/UDM.app/Contents/MacOS/UDM
       - uses: actions/upload-artifact@v4
         with:
           name: screenshot-mac-${{ matrix.label }}
