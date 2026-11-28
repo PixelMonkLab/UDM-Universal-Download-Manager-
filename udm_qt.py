@@ -315,6 +315,8 @@ class StatusDelegate(QStyledItemDelegate):
             painter.fillRect(option.rect, pal.highlight())
         st = j.get("status")
         pct = 100.0 if st == "done" else float(j.get("percent") or 0)
+        if st in ("error", "cancelled") and not j.get("needs_refresh"):
+            pct = 100.0                                   # a failed download shows a full red bar
         color = OK if st == "done" else WARN if (j.get("needs_refresh") or st == "paused") \
             else ERR if st in ("error", "cancelled") else BRAND
         r = QRectF(option.rect.adjusted(4, 5, -4, -5))

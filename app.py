@@ -914,8 +914,10 @@ def extension_dir(browser: str) -> Path:
     # because the browser keeps loading it from that folder.
     dst = Path.home() / "UDM Add-on" / ("Firefox" if browser == "firefox" else "Chrome, Edge, Brave, Opera")
     try:
-        if not (dst / "manifest.json").exists() or (dst / "manifest.json").read_bytes() != (src / "manifest.json").read_bytes() \
-                or any(not (dst / f.relative_to(src)).exists() for f in src.rglob("*") if f.is_file()):
+        def differs(f: Path) -> bool:
+            t = dst / f.relative_to(src)
+            return not t.exists() or t.stat().st_size != f.stat().st_size or t.read_bytes() != f.read_bytes()
+        if any(differs(f) for f in src.rglob("*") if f.is_file()):      # new or changed add-on files
             shutil.rmtree(dst, ignore_errors=True)
             shutil.copytree(src, dst)
         return dst

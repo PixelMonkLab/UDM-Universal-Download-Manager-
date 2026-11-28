@@ -74,6 +74,25 @@ def main():
     print("app:", call("/api/ping"))
     check("desktop app mode", call("/api/desktop").get("desktop") is True)
 
+    # 0. "Start UDM when I log in" writes the right startup entry for this computer, and removes it again
+    def login_entry():
+        if sys.platform == "win32":
+            import winreg
+            try:
+                k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")
+                v = winreg.QueryValueEx(k, "UDM")[0]
+                winreg.CloseKey(k)
+                return v
+            except FileNotFoundError:
+                return None
+        f = os.path.expanduser("~/Library/LaunchAgents/com.pixelmonklab.udm.plist")
+        return open(f).read() if os.path.exists(f) else None
+    r = call("/api/settings", {"start_at_login": True})
+    entry = login_entry()
+    check("start at login: on", bool(entry) and "--minimized" in entry and "UDM" in entry, (r.get("error"), entry))
+    call("/api/settings", {"start_at_login": False})
+    check("start at login: off", login_entry() is None)
+
     # 1. a real file, 4 connections, pause + resume
     r = call("/api/fetch", {"url": SMALL, "connections": 4, "source": "app"})
     print("fetch:", r, flush=True)
