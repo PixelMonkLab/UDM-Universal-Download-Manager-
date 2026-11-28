@@ -1257,7 +1257,17 @@ class MainWindow(QMainWindow):
             log("refresh:", e)
             return
         jobs = r.get("jobs") or []
+        keep = [j["id"] for j in self.selected()]
+        reset = [j["id"] for j in jobs] != [j["id"] for j in self.model.jobs]
         self.model.update(jobs)
+        if reset and keep:
+            sm = self.table.selectionModel()
+            for jid in keep:
+                row = self.model.index_of.get(jid)
+                if row is not None:
+                    idx = self.proxy.mapFromSource(self.model.index(row, 0))
+                    if idx.isValid():
+                        sm.select(idx, sm.SelectionFlag.Select | sm.SelectionFlag.Rows)
         run = sum(1 for j in jobs if j.get("status") in ("starting", "connecting", "downloading", "processing", "converting"))
         q = sum(1 for j in jobs if j.get("status") == "queued")
         sp = (r.get("stats") or {}).get("speed_bps") or 0
@@ -1287,10 +1297,15 @@ class MainWindow(QMainWindow):
 
     def refresh_details(self):
         sel = self.selected()
-        while self.d_btns.count():
-            w = self.d_btns.takeAt(0).widget()
-            if w:
-                w.deleteLater()
+        j0 = sel[0] if len(sel) == 1 else None
+        key = (j0["id"], j0.get("status"), bool(j0.get("needs_refresh"))) if j0 else None
+        rebuild = key != getattr(self, "_btn_key", "x")
+        self._btn_key = key
+        if rebuild:
+            while self.d_btns.count():
+                w = self.d_btns.takeAt(0).widget()
+                if w:
+                    w.deleteLater()
         if len(sel) != 1:
             self.d_title.setText(f"{len(sel)} downloads selected." if sel else "Select a download to see its details.")
             self.segmap.set_job(None)
@@ -1314,6 +1329,9 @@ class MainWindow(QMainWindow):
             self.d_vals[k].setText(v or "–")
             self.d_vals[k].setToolTip(v or "")
 
+        if not rebuild:
+            return
+
         def btn(text, fn):
             b = QPushButton(text)
             b.clicked.connect(fn)
@@ -1323,12 +1341,16 @@ class MainWindow(QMainWindow):
             btn("▶ Open", lambda: self.do("open", [j]))
             btn("📂 Show in folder", lambda: self.do("folder", [j]))
         elif j.get("needs_refresh"):
-            btn("🔄 Refresh download address", lambda: RefreshDialog(self, j).exec())
+            btn("🔄 Refresh download address", lambda: self.do("refresh", [self.fresh(j)]))
         elif st in ("paused", "error", "cancelled"):
             btn("▶ Resume", lambda: self.do("resume", [j]))
         elif st in ACTIVE:
             btn("⏸ Stop", lambda: self.do("stop", [j]))
         btn("🔗 Copy address", lambda: self.do("copy", [j]))
+
+    def fresh(self, j):
+        row = self.model.index_of.get(j["id"])
+        return self.model.jobs[row] if row is not None else j
 
     def ask_refresh(self, jobs):
         """Like IDM: ask for a new address as soon as a link expires."""
@@ -1450,6 +1472,8 @@ class MainWindow(QMainWindow):
         view = payload.get("view")
         if view == "video":
             QTimer.singleShot(100, lambda: self.video(payload.get("url", ""), payload.get("referer", ""), payload.get("name", "")))
+        elif view == "phone":
+            QTimer.singleShot(100, lambda: PhoneDialog(self).exec())
         elif view == "refresh" and payload.get("job_id"):
             j = API.get(f"/api/progress/{payload['job_id']}")
             if j and j.get("id"):
@@ -1610,19 +1634,19 @@ def start_server():
     return srv
 
 
-def main():
+def main(qapp: QApplication | None = None, splash=None):
     global BRIDGE, TRAY
     args = sys.argv[1:]
     test_out = next((a.split("=", 1)[1] for a in args if a.startswith("--selftest-out=")), None)
     selftest = "--selftest" in args
-    if other_copy_running() and not selftest:
-        show_other_copy()
-        return 0
-
-    QApplication.setApplicationName("UDM")
-    QApplication.setOrganizationName("PixelMonkLab")
+    if qapp is None:
+        if other_copy_running() and not selftest:
+            show_other_copy()
+            return 0
+        QApplication.setApplicationName("UDM")
+        QApplication.setOrganizationName("PixelMonkLab")
+        qapp = QApplication(sys.argv)
     QApplication.setApplicationDisplayName("UDM")
-    qapp = QApplication(sys.argv)
     qapp.setWindowIcon(app_icon())
     qapp.setQuitOnLastWindowClosed(False)
     BRIDGE = Bridge()
@@ -1632,13 +1656,20 @@ def main():
     win = MainWindow(QSystemTrayIcon.isSystemTrayAvailable())
     TRAY = win.tray = make_tray(win)
     core.DESKTOP.update(active=True, tray=TRAY is not None, notify=notify, set_login=set_start_at_login,
-                        show=lambda payload=None: on_ui(lambda: win.bring_to_front(payload)))
+                        show=lambda payload=None: on_ui(lambda: win.bring_to_front(payload)),
+                        quit=lambda: on_ui(win.quit_app))
+    if IS_MAC:   # clicking UDM in the Dock brings the hidden window back
+        qapp.applicationStateChanged.connect(
+            lambda st: win.bring_to_front() if st == Qt.ApplicationState.ApplicationActive and not win.isVisible()
+            and not win.quitting else None)
     threading.Thread(target=core.startup, daemon=True).start()
     qapp.aboutToQuit.connect(lambda: core.pause_all_for_quit(5) if not win.quitting else None)
     log(f"UDM {core.VERSION_LABEL} started ({sys.platform}, tray={TRAY is not None})")
 
     if not ("--minimized" in args and TRAY is not None):
         win.show()
+    if splash is not None:
+        splash.finish(win)
 
     if selftest:
         def finish():
@@ -1668,5 +1699,5 @@ def main():
 
 
 if __name__ == "__main__":
-    code = main()
-    os._exit(code or 0)
+    import udm_main
+    os._exit(udm_main.run() or 0)

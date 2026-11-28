@@ -136,8 +136,8 @@ import downloader as dl
 yt_dlp, download_range_func, DownloadCancelled = import_engine()
 
 APP_PORT = 5757  # fixed port the browser extension talks to (5000 clashes with macOS AirPlay)
-APP_VERSION = "1.0.1-beta"
-VERSION_LABEL = "1.0.1 Beta"
+APP_VERSION = "1.1.0-beta"
+VERSION_LABEL = "1.1.0 Beta"
 PHONE_PORT = 5758  # used only when "Phone access" is switched on
 HERE = BUNDLE
 DATA_DIR = Path.home() / ".udm"
@@ -199,7 +199,7 @@ def download_dir() -> Path:
 
 
 # The desktop app (desktop.py) plugs in here: show the window, native notifications, start at login.
-DESKTOP: dict = {"active": False, "tray": False, "show": None, "notify": None, "set_login": None}
+DESKTOP: dict = {"active": False, "tray": False, "show": None, "notify": None, "set_login": None, "quit": None}
 
 
 def desktop_notify(title: str, body: str):
@@ -954,23 +954,26 @@ def api_set_settings():
     for k in ("resume_on_start", "close_to_tray", "notify"):
         if k in data:
             s[k] = bool(data[k])
-    if "start_at_login" in data:
-        want = bool(data["start_at_login"])
-        if DESKTOP["set_login"]:
-            try:
-                DESKTOP["set_login"](want)
-            except Exception as e:
-                return jsonify(error=f"Couldn't change start-at-login: {e}"), 500
-        s["start_at_login"] = want
     for k, lo, hi in (("max_concurrent", 1, 10), ("connections", 1, 16), ("speed_limit_kbps", 0, 10_000_000)):
         if k in data:
             try:
                 s[k] = max(lo, min(hi, int(data[k])))
             except (TypeError, ValueError):
                 return jsonify(error=f"{k} must be a number"), 400
+    login_error = None
+    if "start_at_login" in data:          # last, so a failure here doesn't lose the other changes
+        want = bool(data["start_at_login"])
+        try:
+            if DESKTOP["set_login"]:
+                DESKTOP["set_login"](want)
+            s["start_at_login"] = want
+        except Exception as e:
+            login_error = f"Couldn't change start-at-login: {e}"
     save_json(SETTINGS_FILE, s)
     dl.LIMITER.rate = int(s.get("speed_limit_kbps") or 0) * 1024
     pump()
+    if login_error:
+        return jsonify(error=login_error + " (your other options were saved)"), 500
     return jsonify(s)
 
 
@@ -1323,6 +1326,15 @@ def api_show_window():
     if DESKTOP["show"]:
         DESKTOP["show"](payload)
     return jsonify(ok=True, desktop=DESKTOP["active"])
+
+
+@app.post("/api/quit")
+def api_quit():
+    """Quit the desktop app (downloads pause and continue next time). Used by installers / updates."""
+    if not DESKTOP["quit"]:
+        return jsonify(error="Only the UDM desktop app can be quit this way"), 400
+    DESKTOP["quit"]()
+    return jsonify(ok=True)
 
 
 @app.post("/api/notify")

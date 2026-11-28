@@ -235,6 +235,7 @@ async function refreshJobs() {
       if (j.exists) { btn("▶ Open", () => act("open")); btn("📂 Show", () => act("reveal")); }
       else acts.append(el("span", "muted", "file moved/deleted"));
     } else if (j.status === "paused") { btn("▶ Resume", () => act("resume")); btn("✕ Cancel", () => act("cancel")); }
+    else if (j.status === "error" && j.needs_refresh) btn("🔄 Refresh link", () => VG.send({ type: "openRefresh", job_id: j.id }).catch(() => {}));
     else if (j.status === "error") btn(j.kind === "file" && j.resumable ? "▶ Resume" : "↻ Retry", () => act(j.kind === "file" ? "resume" : "retry"));
     else if (j.status === "cancelled") btn("↻ Retry", () => act("retry"));
     else if (!["cancelling", "pausing"].includes(j.status)) { btn("⏸ Pause", () => act("pause")); btn("✕ Cancel", () => act("cancel")); }

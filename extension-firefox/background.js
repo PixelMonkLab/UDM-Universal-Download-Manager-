@@ -98,7 +98,7 @@ async function maybeNotify(job) {
     return;
   }
   if (job.notified || (job.status !== "done" && job.status !== "error")) return;
-  if (job.status === "error" && job.fallback && !job.notified) {
+  if (job.status === "error" && job.fallback && !job.notified && !/expired|different file|Refresh download address/i.test(job.error || "")) {
     await saveJob({ job_id: job.job_id, notified: true });
     try { api.notifications && api.notifications.clear("vg-start-" + job.job_id); } catch (e) {}
     giveBackToBrowser(job.url, job.title, job.error);
@@ -228,7 +228,14 @@ async function fetchFile(url, opts = {}, source = "extension") {
     url, referer: opts.referer || "", filename: opts.filename || "", source,
     headers: { Cookie: await cookieHeader(url), user_agent: navigator.userAgent },
   };
-  const r = await VG.call("/api/fetch", body, 15000);
+  const r = await VG.call("/api/fetch", body, 30000);
+  if (r.refreshed) {             // this was the fresh link for a download whose link had expired
+    notifyBasic("vg-ref-" + r.job_id, "🔄 Download link refreshed", "Continuing " + (r.title || "your download") + " from where it stopped.");
+    await saveJob({ job_id: r.job_id, url, title: r.title || "", mode: "file", source, status: "starting", ts: Date.now(), notified: false, fallback: false });
+    watch(r.job_id);
+    logTakeover({ name: r.title || url, taken: true, why: "new link for an expired download – continuing it" });
+    return { job_id: r.job_id, refreshed: true };
+  }
   const job = { job_id: r.job_id, url, site: hostOf(url), title: opts.filename || url.split("?")[0].split("/").pop(),
                 mode: "file", source, status: "starting", percent: 0, ts: Date.now(), notified: false,
                 fallback: !!opts.fallback };
@@ -338,9 +345,15 @@ async function handle(msg, sender) {
     }
     case "fetchFile":  return fetchFile(msg.url, msg.opts || {}, msg.source || "extension");
     case "openManager": {
+      if (await showInDesktop({ view: "manager" })) return { ok: true, desktop: true };
       const online = await appIsOnline().catch(() => false);
       await api.tabs.create({ url: online || await VG.call("/api/ping", undefined, 1500).then(() => true, () => false)
         ? VG.BASE + "/manager" : api.runtime.getURL("popup.html?full=1") });
+      return { ok: true };
+    }
+    case "openRefresh": {
+      if (await showInDesktop({ view: "refresh", job_id: msg.job_id })) return { ok: true, desktop: true };
+      await api.tabs.create({ url: VG.BASE + "/manager?refresh=" + encodeURIComponent(msg.job_id) });
       return { ok: true };
     }
     case "takeoverLog": { const r = await api.storage.local.get("takeover_log"); return { log: r.takeover_log || [], online: await appIsOnline() }; }
@@ -368,6 +381,9 @@ async function handle(msg, sender) {
     }
     case "reveal":     return VG.call("/api/open-folder", { job_id: msg.job_id || "" }, 8000);
     case "openApp": {
+      if (await showInDesktop(msg.hash === "phone" ? { view: "phone" }
+          : msg.url ? { view: "video", url: msg.url, referer: msg.referer || "", name: msg.name || "" } : {}))
+        return { ok: true, desktop: true };
       const q = new URLSearchParams();
       if (msg.url) q.set("url", msg.url);
       if (msg.referer) q.set("referer", msg.referer);
@@ -377,6 +393,16 @@ async function handle(msg, sender) {
     }
     default:           throw new Error("Unknown request");
   }
+}
+
+// When the native UDM desktop app is running, open its own window instead of a browser tab
+async function showInDesktop(payload) {
+  try {
+    const d = await VG.call("/api/desktop", undefined, 1500);
+    if (!d || !d.desktop) return false;
+    await VG.call("/api/show-window", payload || {}, 4000);
+    return true;
+  } catch (e) { return false; }
 }
 
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -419,6 +445,7 @@ api.contextMenus && api.contextMenus.onClicked.addListener(async (info, tab) => 
       if (found.length && (!info.linkUrl || url === info.pageUrl)) {
         const b = bestMedia(found); q.set("url", b.url); q.set("referer", b.page); q.set("name", b.title || "");
       } else q.set("url", VG.cleanUrl(url));
+      if (await showInDesktop({ view: "video", url: q.get("url"), referer: q.get("referer") || "", name: q.get("name") || "" })) return;
       await api.tabs.create({ url: VG.BASE + "/?" + q });
       return;
     }

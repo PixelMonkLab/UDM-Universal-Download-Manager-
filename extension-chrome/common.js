@@ -2,7 +2,7 @@
 var VG = (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   const BASE = "http://127.0.0.1:5757";
-  const VERSION_LABEL = "1.0.1 Beta";
+  const VERSION_LABEL = "1.1.0 Beta";
 
   // Pages that get the on-page Download button
   const SITES = [

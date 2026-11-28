@@ -1,0 +1,157 @@
+# Builds UDM and publishes it.
+#  - Publish a Release on GitHub (Releases > Draft a new release > tag like v1.0.0-beta > Publish):
+#    this workflow then builds everything and attaches the download files + notes to that release.
+#  - "Run workflow" (Actions tab) or a pull request: just builds and tests; downloads appear at the
+#    bottom of the run page.
+name: Build UDM apps
+on:
+  workflow_dispatch:
+  pull_request:          # build + self-test every change before it is merged (nothing is published)
+  release:
+    types: [published]
+
+# never let two builds upload to the same release at once
+concurrency:
+  group: build-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows app (UDM.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install parts
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-desktop.txt nuitka pyinstaller
+      - name: Compile and build UDM.exe
+        run: python tools/build_native.py
+      - name: Check that the app starts
+        shell: pwsh
+        run: |
+          $out = "$env:RUNNER_TEMP\selftest.json"
+          $p = Start-Process -FilePath "dist\UDM\UDM.exe" -ArgumentList "--selftest", "--selftest-wait=8000", "--selftest-out=$out" -PassThru
+          for ($i = 0; $i -lt 90 -and -not (Test-Path $out); $i++) { Start-Sleep -Seconds 2 }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          if (-not (Test-Path $out)) { Get-Content "$env:USERPROFILE\.udm\udm-desktop.log" -ErrorAction SilentlyContinue; throw "UDM.exe did not start" }
+          $r = Get-Content $out -Raw | ConvertFrom-Json
+          $r | Format-List
+          if (-not $r.server -or -not $r.compiled -or -not $r.ffmpeg) { throw "UDM.exe self-test failed" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-windows
+          path: ${{ runner.temp }}/selftest.png
+      - name: Make UDM-Windows.zip
+        shell: pwsh
+        run: |
+          Copy-Item "HOW TO USE - Windows.txt" "dist\UDM\"
+          Compress-Archive -Path "dist\UDM" -DestinationPath "UDM-Windows.zip" -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UDM-Windows
+          path: UDM-Windows.zip
+
+  mac:
+    name: Mac app (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            label: AppleSilicon
+          - runner: macos-15-intel
+            label: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install parts
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-desktop.txt nuitka pyinstaller pillow
+      - name: Compile and build UDM.app
+        run: python tools/build_native.py
+      - name: Check that the app starts
+        run: |
+          out="$RUNNER_TEMP/selftest.json"
+          dist/UDM.app/Contents/MacOS/UDM --selftest --selftest-wait=8000 --selftest-out="$out" &
+          for i in $(seq 1 90); do [ -f "$out" ] && break; sleep 2; done
+          kill %1 2>/dev/null || true
+          [ -f "$out" ] || { cat ~/.udm/udm-desktop.log 2>/dev/null; echo "UDM.app did not start"; exit 1; }
+          cat "$out"
+          python -c "import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if r.get('server') and r.get('compiled') and r.get('ffmpeg') else 1)" "$out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-mac-${{ matrix.label }}
+          path: ${{ runner.temp }}/selftest.png
+      - name: Make UDM-Mac-${{ matrix.label }}.zip
+        run: |
+          mkdir -p pkg
+          ditto dist/UDM.app pkg/UDM.app
+          cp "HOW TO USE - Mac.txt" pkg/
+          ditto -c -k --sequesterRsrc pkg "UDM-Mac-${{ matrix.label }}.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UDM-Mac-${{ matrix.label }}
+          path: UDM-Mac-${{ matrix.label }}.zip
+
+  packages:
+    name: Linux (Python) package + add-ons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Add-on packages
+        run: python tools/package_addons.py
+      - name: Make UDM-Linux.zip (browser version that runs with Python; keeps the start files executable)
+        run: |
+          mkdir -p pkg/UDM
+          cp -r app.py downloader.py ui.html manager.html mobile.html requirements.txt icon.ico \
+                "Start UDM.command" start-mac-linux.sh fix-old-videos-mac.sh "HOW TO USE - Mac.txt" README.md PRIVACY.md \
+                extension-chrome extension-firefox store assets pkg/UDM/
+          chmod +x "pkg/UDM/Start UDM.command" pkg/UDM/start-mac-linux.sh pkg/UDM/fix-old-videos-mac.sh
+          (cd pkg && zip -qr ../UDM-Linux.zip UDM)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UDM-packages
+          path: |
+            UDM-Linux.zip
+            dist-addons/*.zip
+
+  release:
+    name: Publish release
+    if: github.event_name == 'release'
+    needs: [windows, mac, packages]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Attach the downloads to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          files=$(find out -name '*.zip' | sort)   # screenshots are .png, not attached
+          echo "$files"
+          notes="RELEASE_NOTES.md"; [ -f "$notes" ] || echo "UDM ${TAG}" > "$notes"
+          title="UDM ${TAG#v}"; title="${title/-beta/ Beta}"
+          # upload one file at a time and retry, so a hiccup never leaves the release half-filled
+          for f in $files; do
+            for try in 1 2 3; do gh release upload "$TAG" "$f" --clobber && break; sleep 5; done
+          done
+          gh release edit "$TAG" --title "$title" --notes-file "$notes" --prerelease=false --latest
+          echo "Attached:"; gh release view "$TAG" --json assets --jq '.assets[].name'
