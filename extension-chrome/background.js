@@ -98,7 +98,7 @@ async function maybeNotify(job) {
     return;
   }
   if (job.notified || (job.status !== "done" && job.status !== "error")) return;
-  if (job.status === "error" && job.fallback && !job.notified) {
+  if (job.status === "error" && job.fallback && !job.notified && !/expired|different file|Refresh download address/i.test(job.error || "")) {
     await saveJob({ job_id: job.job_id, notified: true });
     try { api.notifications && api.notifications.clear("vg-start-" + job.job_id); } catch (e) {}
     giveBackToBrowser(job.url, job.title, job.error);
@@ -228,7 +228,14 @@ async function fetchFile(url, opts = {}, source = "extension") {
     url, referer: opts.referer || "", filename: opts.filename || "", source,
     headers: { Cookie: await cookieHeader(url), user_agent: navigator.userAgent },
   };
-  const r = await VG.call("/api/fetch", body, 15000);
+  const r = await VG.call("/api/fetch", body, 30000);
+  if (r.refreshed) {             // this was the fresh link for a download whose link had expired
+    notifyBasic("vg-ref-" + r.job_id, "🔄 Download link refreshed", "Continuing " + (r.title || "your download") + " from where it stopped.");
+    await saveJob({ job_id: r.job_id, url, title: r.title || "", mode: "file", source, status: "starting", ts: Date.now(), notified: false, fallback: false });
+    watch(r.job_id);
+    logTakeover({ name: r.title || url, taken: true, why: "new link for an expired download – continuing it" });
+    return { job_id: r.job_id, refreshed: true };
+  }
   const job = { job_id: r.job_id, url, site: hostOf(url), title: opts.filename || url.split("?")[0].split("/").pop(),
                 mode: "file", source, status: "starting", percent: 0, ts: Date.now(), notified: false,
                 fallback: !!opts.fallback };

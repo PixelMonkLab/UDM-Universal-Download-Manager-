@@ -22,6 +22,10 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+class LinkExpired(IOError):
+    """The download link stopped working (expired, or now points to a different file)."""
+
+
 CHUNK = 64 * 1024
 MIN_PART = 1024 * 1024            # never split into parts smaller than 1 MB
 DEFAULT_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -226,7 +230,12 @@ def run_file_download(job: dict, headers: dict, folder: Path, connections: int, 
             try:
                 r = _open(url, headers, rng=(pos, end) if ranges else None)
                 if ranges and r.status != 206:
-                    raise IOError("The server stopped allowing partial downloads")
+                    raise LinkExpired("The link no longer allows continuing the download")
+                if ranges and size:
+                    cr = r.headers.get("Content-Range") or ""
+                    total = cr.split("/")[-1].strip() if "/" in cr else ""
+                    if total.isdigit() and int(total) != size:
+                        raise LinkExpired("The link now points to a different file")
                 with r, open(part, "r+b") as f:
                     f.seek(pos)
                     while not stop.is_set():
@@ -254,7 +263,11 @@ def run_file_download(job: dict, headers: dict, folder: Path, connections: int, 
                 if stop.is_set():
                     return
                 tries += 1
-                if tries > 8 or (isinstance(e, urllib.error.HTTPError) and e.code in (401, 403, 404, 410)):
+                if isinstance(e, urllib.error.HTTPError) and e.code in (401, 403, 404, 410, 498):
+                    errors.append(LinkExpired(f"The link has expired (the site answered {e.code})"))
+                    stop.set()
+                    return
+                if isinstance(e, LinkExpired) or tries > 8:
                     errors.append(e)
                     stop.set()
                     return
