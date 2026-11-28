@@ -58,7 +58,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QC
                                QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMainWindow,
                                QMenu, QMessageBox, QPlainTextEdit, QProgressDialog, QPushButton,
                                QRadioButton, QSizePolicy, QSlider, QSpinBox, QSplitter, QStyle,
-                               QStyledItemDelegate, QStyleOptionProgressBar, QSystemTrayIcon,
+                               QStyledItemDelegate, QSystemTrayIcon,
                                QTableView, QTabWidget, QToolBar, QTreeWidget, QTreeWidgetItem,
                                QVBoxLayout, QWidget)
 
@@ -303,28 +303,39 @@ class JobsFilter(QSortFilterProxyModel):
 
 
 class StatusDelegate(QStyledItemDelegate):
-    """Progress bar in the Status column, like IDM."""
+    """Progress bar in the Status column, like IDM. Drawn by UDM itself so it looks the same (and sits in the
+    right place) with every platform style - the macOS style can't draw progress bars inside table cells."""
 
     def paint(self, painter, option, index):
         j = index.data(JOB_ROLE)
         if not j:
             return super().paint(painter, option, index)
+        pal = option.palette
         if option.state & QStyle.StateFlag.State_Selected:
-            painter.fillRect(option.rect, option.palette.highlight())
-        bar = QStyleOptionProgressBar()
-        bar.rect = option.rect.adjusted(3, 4, -3, -4)
-        bar.minimum, bar.maximum = 0, 100
-        bar.progress = 100 if j.get("status") == "done" else int(j.get("percent") or 0)
-        bar.text = status_text(j)
-        bar.textVisible = True
-        bar.textAlignment = Qt.AlignmentFlag.AlignCenter
-        bar.state = QStyle.StateFlag.State_Enabled | QStyle.StateFlag.State_Horizontal
-        pal = QPalette(option.palette)
-        color = OK if j.get("status") == "done" else WARN if (j.get("needs_refresh") or j.get("status") == "paused") \
-            else ERR if j.get("status") in ("error", "cancelled") else BRAND
-        pal.setColor(QPalette.ColorRole.Highlight, color)
-        bar.palette = pal
-        QApplication.style().drawControl(QStyle.ControlElement.CE_ProgressBar, bar, painter)
+            painter.fillRect(option.rect, pal.highlight())
+        st = j.get("status")
+        pct = 100.0 if st == "done" else float(j.get("percent") or 0)
+        color = OK if st == "done" else WARN if (j.get("needs_refresh") or st == "paused") \
+            else ERR if st in ("error", "cancelled") else BRAND
+        r = QRectF(option.rect.adjusted(4, 5, -4, -5))
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(pal.color(QPalette.ColorRole.Mid))
+        painter.setBrush(pal.color(QPalette.ColorRole.Base))
+        painter.drawRoundedRect(r, 3, 3)
+        filled = QRectF(r.x(), r.y(), r.width() * max(0.0, min(pct, 100.0)) / 100, r.height())
+        if filled.width() > 0:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(color)
+            painter.drawRoundedRect(filled, 3, 3)
+        text = status_text(j)
+        painter.setPen(pal.color(QPalette.ColorRole.Text))       # text on the empty part
+        painter.drawText(r, Qt.AlignmentFlag.AlignCenter, text)
+        if filled.width() > 0:                                    # white text on the coloured part
+            painter.setClipRect(filled)
+            painter.setPen(QColor("#ffffff"))
+            painter.drawText(r, Qt.AlignmentFlag.AlignCenter, text)
+        painter.restore()
 
 
 class SegmentMap(QWidget):
@@ -1066,8 +1077,9 @@ class MainWindow(QMainWindow):
         self.asked_refresh: set = set()
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
-        self.resize(1240, 780)
-        self.setMinimumSize(900, 560)
+        avail = QGuiApplication.primaryScreen().availableGeometry()
+        self.resize(min(1240, int(avail.width() * 0.94)), min(780, int(avail.height() * 0.9)))
+        self.setMinimumSize(760, 480)
         self.setAcceptDrops(True)
 
         self.model = JobsModel()
@@ -1140,8 +1152,8 @@ class MainWindow(QMainWindow):
         # left: categories
         self.side = QTreeWidget()
         self.side.setHeaderHidden(True)
-        self.side.setMinimumWidth(190)
-        self.side.setMaximumWidth(260)
+        self.side.setMinimumWidth(170)
+        self.side.setMaximumWidth(240)
         self.side_items = {}
         root = QTreeWidgetItem(["All downloads"])
         root.setData(0, JOB_ROLE, "all")
@@ -1186,9 +1198,13 @@ class MainWindow(QMainWindow):
         self.table.setShowGrid(False)
         self.table.setAlternatingRowColors(True)
         self.table.setItemDelegateForColumn(2, StatusDelegate(self.table))
+        self.table.setTextElideMode(Qt.TextElideMode.ElideMiddle)     # keep the file type visible
+        self.table.setWordWrap(False)
         hh = self.table.horizontalHeader()
+        hh.setMinimumSectionSize(40)
         hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        for c, w in ((1, 90), (2, 190), (3, 80), (4, 100), (5, 110), (6, 80)):
+        for c, w in ((1, 80), (2, 150), (3, 68), (4, 92), (5, 78), (6, 70)):
+            hh.setSectionResizeMode(c, QHeaderView.ResizeMode.Interactive)
             self.table.setColumnWidth(c, w)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.context_menu)
@@ -1234,6 +1250,7 @@ class MainWindow(QMainWindow):
         split.addWidget(self.side)
         split.addWidget(center)
         split.setStretchFactor(1, 1)
+        split.setSizes([185, max(500, self.width() - 185)])
         self.setCentralWidget(split)
 
         # status bar

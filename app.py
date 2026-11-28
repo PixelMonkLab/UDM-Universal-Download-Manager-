@@ -30,6 +30,8 @@ except ImportError:
     pass
 
 
+# Windows: run helper programs (ffmpeg ...) without flashing a black console window
+NO_WINDOW = {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)} if os.name == "nt" else {}
 FROZEN = getattr(sys, "frozen", False)          # True when running as UDM.exe
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 ENGINE_DIR = Path.home() / ".udm" / "engine"
@@ -341,7 +343,7 @@ def format_sort(quality):
 def probe_codecs(path, ffmpeg):
     """Return (video_codec, audio_codec) using 'ffmpeg -i' (no ffprobe needed)."""
     r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True,
-                       errors="ignore")
+                       errors="ignore", **NO_WINDOW)
     v = re.search(r"Stream #.*?Video: (\w+)", r.stderr)
     a = re.search(r"Stream #.*?Audio: (\w+)", r.stderr)
     return (v.group(1).lower() if v else None, a.group(1).lower() if a else None)
@@ -349,7 +351,7 @@ def probe_codecs(path, ffmpeg):
 
 def media_duration(path, ffmpeg):
     """Length in seconds of an audio/video file (None if it has no playable media)."""
-    r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True, errors="ignore")
+    r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True, errors="ignore", **NO_WINDOW)
     m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", r.stderr)
     return int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3]) if m else None
 
@@ -377,7 +379,7 @@ def make_mac_compatible(path, ffmpeg):
         cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"]
     cmd += ["-c:a", "copy"] if a_ok else ["-c:a", "aac", "-b:a", "192k"]
     cmd += ["-movflags", "+faststart", str(out)]
-    r = subprocess.run(cmd, capture_output=True, text=True, errors="ignore")
+    r = subprocess.run(cmd, capture_output=True, text=True, errors="ignore", **NO_WINDOW)
     if r.returncode != 0 or not out.exists():
         out.unlink(missing_ok=True)
         raise RuntimeError("Converting for QuickTime failed: " + r.stderr[-500:])
@@ -1001,7 +1003,7 @@ def pick_folder_dialog(start: str) -> str | None:
         return r.stdout.strip() or None
     code = ("import tkinter as t,tkinter.filedialog as f;r=t.Tk();r.withdraw();r.attributes('-topmost',1);"
             f"print(f.askdirectory(initialdir={start!r}) or '')")
-    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, **NO_WINDOW)
     return r.stdout.strip() or None
 
 
