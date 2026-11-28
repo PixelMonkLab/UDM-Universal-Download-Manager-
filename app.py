@@ -30,6 +30,8 @@ except ImportError:
     pass
 
 
+# Windows: run helper programs (ffmpeg ...) without flashing a black console window
+NO_WINDOW = {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)} if os.name == "nt" else {}
 FROZEN = getattr(sys, "frozen", False)          # True when running as UDM.exe
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 ENGINE_DIR = Path.home() / ".udm" / "engine"
@@ -136,8 +138,8 @@ import downloader as dl
 yt_dlp, download_range_func, DownloadCancelled = import_engine()
 
 APP_PORT = 5757  # fixed port the browser extension talks to (5000 clashes with macOS AirPlay)
-APP_VERSION = "1.0.1-beta"
-VERSION_LABEL = "1.0.1 Beta"
+APP_VERSION = "1.1.0-beta"
+VERSION_LABEL = "1.1.0 Beta"
 PHONE_PORT = 5758  # used only when "Phone access" is switched on
 HERE = BUNDLE
 DATA_DIR = Path.home() / ".udm"
@@ -181,6 +183,10 @@ def get_settings() -> dict:
     s.setdefault("max_concurrent", 3)          # downloads running at the same time (the rest wait in the queue)
     s.setdefault("connections", 8)             # connections per file (IDM-style acceleration)
     s.setdefault("speed_limit_kbps", 0)        # 0 = no limit
+    s.setdefault("resume_on_start", True)      # continue downloads that were running when UDM closed
+    s.setdefault("close_to_tray", True)        # desktop app: closing the window keeps UDM downloading
+    s.setdefault("start_at_login", False)      # desktop app: start UDM (in the tray) when you log in
+    s.setdefault("notify", True)               # desktop app: notifications when downloads start / finish
     return s
 
 
@@ -194,10 +200,23 @@ def download_dir() -> Path:
     return d
 
 
+# The desktop app (desktop.py) plugs in here: show the window, native notifications, start at login.
+DESKTOP: dict = {"active": False, "tray": False, "show": None, "notify": None, "set_login": None, "quit": None}
+
+
+def desktop_notify(title: str, body: str):
+    if DESKTOP["active"] and DESKTOP["notify"] and get_settings().get("notify", True):
+        try:
+            DESKTOP["notify"](title, body)
+        except Exception:
+            pass
+
+
 HISTORY: list[dict] = load_json(HISTORY_FILE, [])
-for _h in HISTORY:   # downloads that were running when UDM was closed can be resumed
+for _h in HISTORY:   # downloads that were running when UDM was closed (or crashed) get resumed
     if _h.get("status") not in ("done", "error", "cancelled", "paused"):
         _h["status"] = "paused"
+        _h["resume_next"] = True
 
 
 def remember(job: dict):
@@ -205,7 +224,16 @@ def remember(job: dict):
     keep = {k: job.get(k) for k in ("id", "url", "title", "platform", "mode", "status", "file", "files",
                                     "error", "warning", "ts", "trim", "folder", "thumbnail", "size",
                                     "source", "request", "done_ts", "kind", "category", "part",
-                                    "resumable", "downloaded", "custom_name", "queued_ts", "percent")}
+                                    "resumable", "downloaded", "custom_name", "queued_ts", "percent",
+                                    "resume_next", "needs_refresh")}
+    if job.get("status") in ("done", "error") and not job.get("_notified") and (job.get("source") or "app") in ("app", "phone"):
+        job["_notified"] = True
+        name = Path(job["file"]).name if job.get("file") else (job.get("title") or job.get("url"))
+        if job["status"] == "done":
+            desktop_notify("✅ Download finished", name)
+        else:
+            desktop_notify("⚠️ Download needs attention" if job.get("needs_refresh") else "⚠️ Download failed",
+                           f"{name} – " + (job.get("error") or "").split("\n")[0][:120])
     keep["part"] = job.get("_part") or job.get("part")
     if keep.get("request"):     # never store browser cookies on disk
         keep["request"] = {k: v for k, v in keep["request"].items() if k not in ("headers",)}
@@ -315,7 +343,7 @@ def format_sort(quality):
 def probe_codecs(path, ffmpeg):
     """Return (video_codec, audio_codec) using 'ffmpeg -i' (no ffprobe needed)."""
     r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True,
-                       errors="ignore")
+                       errors="ignore", **NO_WINDOW)
     v = re.search(r"Stream #.*?Video: (\w+)", r.stderr)
     a = re.search(r"Stream #.*?Audio: (\w+)", r.stderr)
     return (v.group(1).lower() if v else None, a.group(1).lower() if a else None)
@@ -323,7 +351,7 @@ def probe_codecs(path, ffmpeg):
 
 def media_duration(path, ffmpeg):
     """Length in seconds of an audio/video file (None if it has no playable media)."""
-    r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True, errors="ignore")
+    r = subprocess.run([ffmpeg, "-hide_banner", "-i", str(path)], capture_output=True, text=True, errors="ignore", **NO_WINDOW)
     m = re.search(r"Duration: (\d+):(\d+):([\d.]+)", r.stderr)
     return int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3]) if m else None
 
@@ -351,7 +379,7 @@ def make_mac_compatible(path, ffmpeg):
         cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p"]
     cmd += ["-c:a", "copy"] if a_ok else ["-c:a", "aac", "-b:a", "192k"]
     cmd += ["-movflags", "+faststart", str(out)]
-    r = subprocess.run(cmd, capture_output=True, text=True, errors="ignore")
+    r = subprocess.run(cmd, capture_output=True, text=True, errors="ignore", **NO_WINDOW)
     if r.returncode != 0 or not out.exists():
         out.unlink(missing_ok=True)
         raise RuntimeError("Converting for QuickTime failed: " + r.stderr[-500:])
@@ -686,13 +714,18 @@ def run_file_job(job: dict, data: dict):
         remember(job)
         dl.run_file_download(job, headers, Path(job["folder"]), int(data.get("connections") or s.get("connections") or 8),
                              unique_path)
-        job.update(status="done", done_ts=time.time(), error=None)
+        job.update(status="done", done_ts=time.time(), error=None, awaiting_refresh=False, needs_refresh=False)
     except InterruptedError as e:
         if str(e) == "paused":
             job.update(status="paused")
             job["_pause"] = False
         else:
             job.update(status="cancelled", error="Cancelled")
+    except dl.LinkExpired as e:
+        has_progress = bool(job.get("_part") and Path(job["_part"]).exists() and (job.get("downloaded") or 0) > 0)
+        job.update(status="error", needs_refresh=True, resumable=True,
+                   error=f"{e}. Use 'Refresh download address' to continue from where it stopped"
+                         + (f" ({human_size(job.get('downloaded'))} already downloaded)." if has_progress else "."))
     except Exception as e:
         msg = str(e)
         if "403" in msg or "401" in msg:
@@ -715,6 +748,18 @@ def public(job: dict) -> dict:
     return out
 
 
+# ---------------- pages ----------------
+def page_html(name: str) -> str:
+    """The web pages (phone page; browser version). The desktop app has them built into its compiled code."""
+    try:
+        import udm_embedded              # created by the build: pages inside the compiled app
+        if name in udm_embedded.PAGES:
+            return udm_embedded.PAGES[name]
+    except ImportError:
+        pass
+    return (HERE / name).read_text(encoding="utf-8")
+
+
 # ---------------- security ----------------
 # The computer itself (127.0.0.1) can use everything. Browser extensions may call the API.
 # Phones on your Wi-Fi only get in when "Phone access" is on AND they know the secret key from the QR code.
@@ -724,7 +769,8 @@ LOCAL_HOSTS = {f"127.0.0.1:{APP_PORT}", f"localhost:{APP_PORT}", f"127.0.0.1:{PH
 # things a phone must never do on your computer
 LOCAL_ONLY = ("/api/settings", "/api/choose-folder", "/api/open-folder", "/api/open-file", "/api/clear-history",
               "/api/phone", "/api/extension", "/api/reveal-extension", "/api/remove", "/api/delete",
-              "/api/pause-all", "/api/resume-all")
+              "/api/pause-all", "/api/resume-all", "/api/open-url", "/api/refresh", "/api/quit",
+              "/api/show-window", "/api/notify")
 
 
 def is_local_request():
@@ -868,8 +914,10 @@ def extension_dir(browser: str) -> Path:
     # because the browser keeps loading it from that folder.
     dst = Path.home() / "UDM Add-on" / ("Firefox" if browser == "firefox" else "Chrome, Edge, Brave, Opera")
     try:
-        if not (dst / "manifest.json").exists() or (dst / "manifest.json").read_bytes() != (src / "manifest.json").read_bytes() \
-                or any(not (dst / f.relative_to(src)).exists() for f in src.rglob("*") if f.is_file()):
+        def differs(f: Path) -> bool:
+            t = dst / f.relative_to(src)
+            return not t.exists() or t.stat().st_size != f.stat().st_size or t.read_bytes() != f.read_bytes()
+        if any(differs(f) for f in src.rglob("*") if f.is_file()):      # new or changed add-on files
             shutil.rmtree(dst, ignore_errors=True)
             shutil.copytree(src, dst)
         return dst
@@ -907,15 +955,29 @@ def api_set_settings():
         except Exception as e:
             return jsonify(error=f"Can't save to that folder: {e}"), 400
         s["download_dir"] = str(d)
+    for k in ("resume_on_start", "close_to_tray", "notify"):
+        if k in data:
+            s[k] = bool(data[k])
     for k, lo, hi in (("max_concurrent", 1, 10), ("connections", 1, 16), ("speed_limit_kbps", 0, 10_000_000)):
         if k in data:
             try:
                 s[k] = max(lo, min(hi, int(data[k])))
             except (TypeError, ValueError):
                 return jsonify(error=f"{k} must be a number"), 400
+    login_error = None
+    if "start_at_login" in data:          # last, so a failure here doesn't lose the other changes
+        want = bool(data["start_at_login"])
+        try:
+            if DESKTOP["set_login"]:
+                DESKTOP["set_login"](want)
+            s["start_at_login"] = want
+        except Exception as e:
+            login_error = f"Couldn't change start-at-login: {e}"
     save_json(SETTINGS_FILE, s)
     dl.LIMITER.rate = int(s.get("speed_limit_kbps") or 0) * 1024
     pump()
+    if login_error:
+        return jsonify(error=login_error + " (your other options were saved)"), 500
     return jsonify(s)
 
 
@@ -943,7 +1005,7 @@ def pick_folder_dialog(start: str) -> str | None:
         return r.stdout.strip() or None
     code = ("import tkinter as t,tkinter.filedialog as f;r=t.Tk();r.withdraw();r.attributes('-topmost',1);"
             f"print(f.askdirectory(initialdir={start!r}) or '')")
-    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, **NO_WINDOW)
     return r.stdout.strip() or None
 
 
@@ -1009,6 +1071,8 @@ def api_download():
     data["url"] = url
     job = new_job(data)
     enqueue(job, data)
+    if job["source"] in ("app", "phone"):
+        desktop_notify("⬇️ Download started", job.get("title") or url)
     return jsonify(job_id=job["id"], folder=job["folder"])
 
 
@@ -1070,6 +1134,7 @@ def api_pause(job_id):
     elif job["status"] in RUNNING_STATES:
         job["_pause"] = True
         job["status"] = "pausing"
+    job["resume_next"] = False           # you paused it: don't restart it by itself
     remember(job)
     return jsonify(ok=True)
 
@@ -1087,6 +1152,57 @@ def api_resume(job_id):
             job["_part"] = None
         enqueue(job, data)
     return jsonify(ok=True)
+
+
+def pause_all_for_quit(timeout: float = 10.0) -> int:
+    """UDM is closing: pause every download (keeping its progress) so it continues next time.
+    Returns how many downloads were paused."""
+    n = 0
+    for j in list(JOBS.values()):
+        if j["status"] == "queued":
+            j.update(status="paused", resume_next=True)
+            remember(j)
+            n += 1
+        elif j["status"] in RUNNING_STATES and j["status"] != "cancelling":
+            j["_pause"] = True
+            j["resume_next"] = True
+            j["status"] = "pausing"
+            n += 1
+    end = time.time() + timeout
+    while time.time() < end and any(j["status"] in RUNNING_STATES + ("pausing",) for j in JOBS.values()):
+        time.sleep(0.2)
+    for j in JOBS.values():               # anything still busy: save it as paused anyway
+        if j["status"] in RUNNING_STATES + ("pausing",):
+            j.update(status="paused", resume_next=True)
+            remember(j)
+    return n
+
+
+def resume_interrupted() -> int:
+    """On start: continue downloads that were running when UDM was closed (not ones you paused yourself)."""
+    if not get_settings().get("resume_on_start", True):
+        return 0
+    n = 0
+    for h in list(HISTORY):
+        if h.get("status") == "paused" and h.get("resume_next"):
+            job = load_job(h["id"])
+            if job:
+                job["resume_next"] = False
+                data = dict(job.get("request") or {})
+                data.setdefault("url", job["url"])
+                enqueue(job, data)
+                n += 1
+    return n
+
+
+def startup():
+    """Things to do once the server is running (used by the console app and the desktop app)."""
+    if get_settings().get("phone_enabled"):
+        err = start_phone_server()
+        print(f"  Phone access: {'on - ' + phone_info()['url'] if not err else err}", flush=True)
+    n = resume_interrupted()
+    if n:
+        print(f"  Continuing {n} unfinished download(s) from last time.", flush=True)
 
 
 @app.post("/api/pause-all")
@@ -1113,10 +1229,144 @@ def api_resume_all():
     return jsonify(ok=True)
 
 
+# ---------------- "Refresh download address" (like IDM) ----------------
+def _req_headers(data: dict) -> dict:
+    h = dict(data.get("headers") or {})
+    ua = h.pop("user_agent", None)
+    if ua:
+        h["User-Agent"] = ua
+    if data.get("referer"):
+        h["Referer"] = data["referer"]
+    return h
+
+
+def refresh_job(job: dict, new_url: str, data: dict) -> tuple[bool, str]:
+    """Point a stopped download at a fresh link and continue the same partial file."""
+    try:
+        info = dl.probe(new_url, _req_headers(data))
+    except Exception as e:
+        return False, f"That link doesn't work either: {e}"
+    if job.get("size") and info.get("size") and int(info["size"]) != int(job["size"]):
+        return False, (f"That link is a different file ({human_size(info['size'])}, but this download is "
+                       f"{human_size(job['size'])}). Make sure it's the same file.")
+    part = job.get("_part") or job.get("part")
+    if part and Path(part + ".vgstate").exists():
+        try:
+            st = json.loads(Path(part + ".vgstate").read_text())
+            st["url"] = info["final_url"]
+            st["ranges"] = st.get("ranges") and info["ranges"]
+            Path(part + ".vgstate").write_text(json.dumps(st))
+        except Exception:
+            pass
+    old = job.get("_data") or dict(job.get("request") or {})
+    newdata = dict(old, url=new_url)
+    if data.get("headers"):
+        newdata["headers"] = data["headers"]
+    if data.get("referer"):
+        newdata["referer"] = data["referer"]
+    job.update(url=new_url, needs_refresh=False, awaiting_refresh=False, error=None, _part=part)
+    job["request"] = {k: v for k, v in newdata.items() if k != "headers"}
+    enqueue(job, newdata)
+    return True, "ok"
+
+
+@app.post("/api/refresh/<job_id>")
+def api_refresh(job_id):
+    """Use a new link (pasted, or caught from the browser) for a download whose link expired."""
+    job = load_job(job_id)
+    if not job:
+        return jsonify(error="Unknown download"), 404
+    data = request.get_json(silent=True) or {}
+    url = (data.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return jsonify(error="Paste a link that starts with http:// or https://"), 400
+    ok, msg = refresh_job(job, url, data)
+    return (jsonify(ok=True), 200) if ok else (jsonify(error=msg), 409)
+
+
+@app.post("/api/refresh-wait/<job_id>")
+def api_refresh_wait(job_id):
+    """Wait for the user to click the download link again in the browser; the add-on hands it to us."""
+    job = load_job(job_id)
+    if not job:
+        return jsonify(error="Unknown download"), 404
+    if job["status"] not in ("error", "paused"):
+        return jsonify(error="This download doesn't need a new link."), 400
+    job.update(awaiting_refresh=True, awaiting_since=time.time(), needs_refresh=True)
+    page = (job.get("request") or {}).get("referer") or ""
+    return jsonify(ok=True, page=page)
+
+
+def match_waiting_refresh(url: str, data: dict):
+    """If a download is waiting for a fresh link and this new download is the same file, refresh it."""
+    waiting = [j for j in JOBS.values() if j.get("awaiting_refresh") and j.get("needs_refresh")
+               and j["status"] in ("error", "paused") and time.time() - j.get("awaiting_since", 0) < 1800]
+    if not waiting:
+        return None
+    try:
+        info = dl.probe(url, _req_headers(data))
+    except Exception:
+        return None
+    for j in waiting:
+        same_size = j.get("size") and info.get("size") and int(info["size"]) == int(j["size"])
+        same_name = (info.get("filename") or "").lower() == (j.get("filename_planned") or j.get("title") or "").lower()
+        if same_size or (same_name and not j.get("size")):
+            ok, _ = refresh_job(j, url, data)
+            if ok:
+                return j
+    return None
+
+
+@app.get("/api/desktop")
+def api_desktop():
+    return jsonify(desktop=DESKTOP["active"], tray=DESKTOP["tray"],
+                   os="windows" if os.name == "nt" else "mac" if sys.platform == "darwin" else "linux")
+
+
+@app.post("/api/show-window")
+def api_show_window():
+    """A second copy of UDM was started: bring the existing window to the front instead."""
+    payload = request.get_json(silent=True) or {}     # e.g. {"view": "video", "url": ...}
+    if DESKTOP["show"]:
+        DESKTOP["show"](payload)
+    return jsonify(ok=True, desktop=DESKTOP["active"])
+
+
+@app.post("/api/quit")
+def api_quit():
+    """Quit the desktop app (downloads pause and continue next time). Used by installers / updates."""
+    if not DESKTOP["quit"]:
+        return jsonify(error="Only the UDM desktop app can be quit this way"), 400
+    threading.Timer(0.3, DESKTOP["quit"]).start()      # answer first, then quit
+    return jsonify(ok=True)
+
+
+@app.post("/api/notify")
+def api_notify():
+    d = request.get_json(silent=True) or {}
+    desktop_notify(str(d.get("title", "UDM"))[:80], str(d.get("body", ""))[:200])
+    return jsonify(ok=True)
+
+
+@app.post("/api/open-url")
+def api_open_url():
+    """Open a web page in the computer's normal browser (used by the desktop app)."""
+    url = ((request.get_json(silent=True) or {}).get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return jsonify(error="Not a web link"), 400
+    webbrowser.open(url)
+    return jsonify(ok=True)
+
+
 @app.post("/api/fetch")
 def api_fetch():
     """Download ANY file (zip, pdf, exe, music, images ...) with several connections - like IDM."""
     data = request.get_json(force=True)
+    one = (data.get("url") or "").strip()
+    if one and "\n" not in one and " " not in one:
+        j = match_waiting_refresh(one, data)
+        if j:
+            return jsonify(job_id=j["id"], job_ids=[j["id"]], refreshed=True, title=j.get("title"))
     urls = [u.strip() for u in re.split(r"[\s]+", data.get("url") or "") if u.strip().startswith(("http://", "https://", "ftp://"))]
     if not urls:
         return jsonify(error="Please enter a link that starts with http:// or https://"), 400
@@ -1139,6 +1389,8 @@ def api_fetch():
         else:
             enqueue(job, d)
         ids.append(job["id"])
+    if (data.get("source") or "app") in ("app", "phone") and not data.get("start_paused"):
+        desktop_notify("⬇️ Download started", f"{len(ids)} files" if len(ids) > 1 else (data.get("filename") or urls[0].split("?")[0].rsplit("/", 1)[-1]))
     return jsonify(job_ids=ids, job_id=ids[0])
 
 
@@ -1366,20 +1618,20 @@ def api_test_download():
 
 @app.get("/manager")
 def manager_page():
-    html = (HERE / "manager.html").read_text(encoding="utf-8")
+    html = page_html("manager.html")
     return Response(html.replace("{{VERSION}}", VERSION_LABEL), mimetype="text/html")
 
 
 @app.get("/m")
 def mobile_page():
-    html = (HERE / "mobile.html").read_text(encoding="utf-8")
+    html = page_html("mobile.html")
     key = get_settings().get("phone_key", "") if (is_local_request() or phone_key_ok()) else ""
     return Response(html.replace("{{VERSION}}", VERSION_LABEL).replace("{{KEY}}", key), mimetype="text/html")
 
 
 @app.get("/")
 def index():
-    html = (HERE / "ui.html").read_text(encoding="utf-8")
+    html = page_html("ui.html")
     return Response(html.replace("{{PORT}}", str(APP_PORT)).replace("{{VERSION}}", VERSION_LABEL), mimetype="text/html")
 
 
@@ -1407,9 +1659,9 @@ if __name__ == "__main__":
         fix_old()
         sys.exit(0)
     url = f"http://127.0.0.1:{APP_PORT}"
-    if get_settings().get("phone_enabled"):
-        err = start_phone_server()
-        print(f"  Phone access: {'on - ' + phone_info()['url'] if not err else err}", flush=True)
+    threading.Timer(0.5, startup).start()
+    import atexit
+    atexit.register(lambda: pause_all_for_quit(5))
     print(f"\n  UDM {VERSION_LABEL} (engine {yt_dlp.version.__version__}) is running at {url}\n  Saving to: {download_dir()}\n  Keep this window open. Close it to stop.\n", flush=True)
     if "--no-browser" not in sys.argv:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
@@ -1419,6 +1671,9 @@ if __name__ == "__main__":
     flask.cli.show_server_banner = lambda *a, **k: None
     try:
         app.run(host="127.0.0.1", port=APP_PORT, debug=False, threaded=True)
+    except KeyboardInterrupt:
+        print("\n  Pausing downloads - they continue next time you start UDM ...", flush=True)
+        pause_all_for_quit(8)
     except OSError as e:
         print(f"\n  Couldn't start: {e}\n  UDM may already be running - open http://127.0.0.1:{APP_PORT}")
         if FROZEN:

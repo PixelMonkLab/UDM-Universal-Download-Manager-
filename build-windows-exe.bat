@@ -2,7 +2,7 @@
 title Build UDM.exe
 cd /d "%~dp0"
 echo.
-echo === Building UDM.exe (takes 2-5 minutes) ===
+echo === Building the UDM desktop app (takes 5-15 minutes) ===
 echo.
 
 rem Find Python 3.10+ (only needed on THIS computer, to build the app once)
@@ -23,10 +23,10 @@ if not exist ".buildenv\Scripts\python.exe" (
 )
 echo Installing parts...
 ".buildenv\Scripts\python.exe" -m pip install -q --upgrade pip >nul 2>nul
-".buildenv\Scripts\python.exe" -m pip install -q --upgrade -r requirements.txt pyinstaller || (echo Installing failed. Check your internet. & pause & exit /b 1)
+".buildenv\Scripts\python.exe" -m pip install -q --upgrade -r requirements.txt -r requirements-desktop.txt nuitka pyinstaller || (echo Installing failed. Check your internet. & pause & exit /b 1)
 
 echo Building...
-".buildenv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --log-level WARN UDM.spec || (echo Build failed - see the messages above. & pause & exit /b 1)
+".buildenv\Scripts\python.exe" tools\build_native.py || (echo Build failed - see the messages above. & pause & exit /b 1)
 
 echo Making a zip you can share...
 powershell -NoProfile -Command "Compress-Archive -Force -Path 'dist\UDM' -DestinationPath 'UDM-Windows.zip'"
